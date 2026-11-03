@@ -1,0 +1,10 @@
+{
+  "slogan": "LA QUALITÉ PRIORITÉ",
+  "welcome": "KABAMAN brings what you want to your door.",
+  "line": "From the world to your hands",
+  "services": [
+    { "name": "Importation", "note": "Up to 100 kg", "action": "" },
+    { "name": "Sourcing", "note": "", "action": "" },
+    { "name": "Inspection", "note": "", "action": "" }
+  ]
+}

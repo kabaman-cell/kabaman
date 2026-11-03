@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin | KABAMAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><img src="assets/logo.jpg" alt="KABAMAN" /></span>
+        <strong>KABAMAN</strong>
+      </a>
+      <a class="btn btn-gold nav-import" href="index.html">Customer page</a>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <p class="eyebrow">Admin</p>
+    <h1>Customise the website</h1>
+    <p class="admin-note">Changes stay on this browser. Reload the customer page to see them.</p>
+
+    <form id="site-form" class="admin-block" novalidate>
+      <label for="edit-slogan">Slogan
+        <input id="edit-slogan" type="text" maxlength="80" required />
+      </label>
+      <label for="edit-welcome">Welcome sentence
+        <input id="edit-welcome" type="text" maxlength="160" required />
+      </label>
+      <label for="edit-service-0">Service 1 name
+        <input id="edit-service-0" type="text" maxlength="60" required />
+      </label>
+      <label for="edit-service-1">Service 2 name
+        <input id="edit-service-1" type="text" maxlength="60" required />
+      </label>
+      <label for="edit-service-2">Service 3 name
+        <input id="edit-service-2" type="text" maxlength="60" required />
+      </label>
+      <div class="admin-actions">
+        <button class="btn btn-gold" type="submit">Save</button>
+        <button class="btn btn-gold" id="site-reset" type="button">Reset</button>
+      </div>
+      <p id="site-note" class="admin-note" role="status"></p>
+    </form>
+
+    <section class="admin-block">
+      <h2>Orders</h2>
+      <div id="order-list"></div>
+    </section>
+  </main>
+
+  <script src="js/store.js"></script>
+  <script src="js/site.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

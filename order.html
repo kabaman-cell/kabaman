@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KABAMAN | Importation up to 100 kg, sourcing, door to door</title>
+    <meta
+      name="description"
+      content="KABAMAN importation service up to 100 kg, sourcing service, and door to door service. From the world to your hands."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
+  </head>
+  <body>
+    <a class="skip-link" href="#top">Skip to content</a>
+    <header class="nav">
+      <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><img src="assets/logo.jpg" alt="KABAMAN" /></span>
+        <span>
+          <strong>KABAMAN</strong>
+          <small>From the world to your hands</small>
+        </span>
+      </a>
+      <nav class="nav-links" id="site-nav">
+        <a href="index.html#benefits">Why us</a>
+        <a href="index.html#process">Process</a>
+        <a href="index.html#door">Door to door</a>
+        <a href="index.html#quote">Request a quote</a>
+      </nav>
+      <a class="cart-link" href="#your-order" aria-label="Your order, 0 shipments">
+        <span class="cart-label">Your order</span>
+        <span class="cart-count" data-cart-count aria-hidden="true">0</span>
+      </a>
+      <a class="btn btn-gold nav-import" href="#catalog">Importation</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <p id="cart-announce" class="visually-hidden" role="status"></p>
+      <section class="page-intro">
+        <p class="eyebrow">From the world to your hands</p>
+        <h1>Place your import with KABAMAN.</h1>
+        <p class="lede">
+          KABAMAN brings what you want to your door. Choose a service, then tell us the goods. The quote is confirmed after review.
+        </p>
+      </section>
+
+      <ol class="order-steps" aria-label="Order progress">
+        <li data-step="1">1 · Services</li>
+        <li data-step="2">2 · Details</li>
+        <li data-step="3">3 · Checkout</li>
+        <li data-step="4">4 · Confirmation</li>
+      </ol>
+
+      <div id="order-flow">
+        <section id="catalog" class="section tight-top">
+          <div class="section-head">
+            <p class="eyebrow">Service catalog</p>
+            <h2>Choose what you want us to handle</h2>
+            <p>Each card is a service engagement. Add one or combine them. Pricing is a custom quote.</p>
+          </div>
+
+          <article class="service-card featured" id="service-full-importation">
+            <div class="service-main">
+              <p class="pills">
+                <span class="pill">Service</span>
+                <span class="pill pill-solid">Recommended bundle</span>
+              </p>
+              <h3>Full Importation</h3>
+              <p class="service-kicker">Source · Import · Deliver</p>
+              <p>
+                The complete KABAMAN engagement. We source the goods, check quality, prepare custom packaging, and deliver door to door.
+              </p>
+              <ul class="includes">
+                <li>Supplier sourcing matched to your brief</li>
+                <li>Quality inspection before dispatch</li>
+                <li>Custom packaging for your brand</li>
+                <li>Door-to-door delivery to your destination</li>
+              </ul>
+            </div>
+            <div class="service-side">
+              <p class="price-line">Custom quote<span>Price confirmed after review</span></p>
+              <button type="button" class="btn btn-gold" data-add="full-importation" data-label="Importation">
+                <span class="btn-label">Importation</span>
+                <span class="visually-hidden">Full Importation</span>
+              </button>
+            </div>
+          </article>
+
+          <div class="service-grid">
+            <article class="service-card" id="service-sourcing">
+              <p class="pills"><span class="pill">Service</span></p>
+              <h3>Sourcing</h3>
+              <p>We identify trusted suppliers and the goods that match your brief.</p>
+              <ul class="includes">
+                <li>Supplier search within our network</li>
+                <li>Product matching to your requirements</li>
+                <li>A sourcing recommendation you can approve</li>
+              </ul>
+              <p class="price-line">Custom quote<span>Price confirmed after review</span></p>
+              <button type="button" class="btn btn-gold" data-add="sourcing" data-label="Add to order">
+                <span class="btn-label">Add to order</span>
+                <span class="visually-hidden">Sourcing</span>
+              </button>
+            </article>
+
+            <article class="service-card" id="service-quality-check">
+              <p class="pills"><span class="pill">Service</span></p>
+              <h3>Quality Check</h3>
+              <p>Inspection against premium standards before anything leaves the supplier.</p>
+              <ul class="includes">
+                <li>Check against your specifications</li>
+                <li>Review of finish, count, and packing condition</li>
+                <li>A clear quality finding before dispatch</li>
+              </ul>
+              <p class="price-line">Custom quote<span>Price confirmed after review</span></p>
+              <button type="button" class="btn btn-gold" data-add="quality-check" data-label="Add to order">
+                <span class="btn-label">Add to order</span>
+                <span class="visually-hidden">Quality Check</span>
+              </button>
+            </article>
+
+            <article class="service-card" id="service-custom-packaging">
+              <p class="pills"><span class="pill">Service</span></p>
+              <h3>Custom Packaging</h3>
+              <p>Packaging tailored to your brand, ready for retail or gifting.</p>
+              <ul class="includes">
+                <li>Packaging aligned to your brand</li>
+                <li>Presentation for retail or gifts</li>
+                <li>Pack-out prepared for shipment</li>
+              </ul>
+              <p class="price-line">Custom quote<span>Price confirmed after review</span></p>
+              <button type="button" class="btn btn-gold" data-add="custom-packaging" data-label="Add to order">
+                <span class="btn-label">Add to order</span>
+                <span class="visually-hidden">Custom Packaging</span>
+              </button>
+            </article>
+
+            <article class="service-card" id="service-door-to-door">
+              <p class="pills"><span class="pill">Service</span></p>
+              <h3>Door to Door Delivery</h3>
+              <p>From our supplier to your door, with the journey handled end to end.</p>
+              <ul class="includes">
+                <li>Routing from supplier to your destination</li>
+                <li>Shipment handling across the journey</li>
+                <li>Delivery to your city</li>
+              </ul>
+              <p class="price-line">Custom quote<span>Price confirmed after review</span></p>
+              <button type="button" class="btn btn-gold" data-add="door-to-door" data-label="Add to order">
+                <span class="btn-label">Add to order</span>
+                <span class="visually-hidden">Door to Door Delivery</span>
+              </button>
+            </article>
+          </div>
+        </section>
+
+        <section id="your-order" class="section tight-top">
+          <div class="section-head">
+            <p class="eyebrow">Step 2</p>
+            <h2 id="your-order-heading">Your order</h2>
+            <p>
+              Set how many shipments each service should cover, then describe the goods and the destination. The shipment count is the service engagement.
+            </p>
+          </div>
+          <div class="order-layout">
+            <div class="panel">
+              <h3>Services selected</h3>
+              <div id="cart-lines"></div>
+              <p id="cart-empty">Your order is empty. Choose a service above to begin.</p>
+              <div id="source-links" hidden></div>
+            </div>
+            <form id="details-form" class="panel stack-form" novalidate aria-labelledby="your-order-heading">
+              <p class="reassure">
+                These details describe the goods you want KABAMAN to handle. They travel with the service order so we can confirm the quote.
+              </p>
+              <label>
+                Goods to import
+                <textarea
+                  id="goods"
+                  name="goods"
+                  data-detail="goods"
+                  rows="4"
+                  required
+                  maxlength="500"
+                  placeholder="What should KABAMAN source or import for you?"
+                ></textarea>
+              </label>
+              <label>
+                Approximate quantity of goods
+                <input
+                  id="goods-qty"
+                  name="goodsQty"
+                  data-detail="goodsQty"
+                  type="text"
+                  required
+                  maxlength="80"
+                  placeholder="For example: 500 units, 2 pallets, or 20 cartons"
+                  autocomplete="off"
+                />
+              </label>
+              <label>
+                Destination country and city
+                <input
+                  id="destination"
+                  name="destination"
+                  data-detail="destination"
+                  type="text"
+                  required
+                  maxlength="160"
+                  placeholder="City and country"
+                  autocomplete="off"
+                />
+              </label>
+              <label>
+                Notes
+                <textarea
+                  id="notes"
+                  name="notes"
+                  data-detail="notes"
+                  rows="3"
+                  maxlength="500"
+                  placeholder="Timeline, packaging, or handling notes"
+                ></textarea>
+              </label>
+              <button id="to-checkout" class="btn btn-gold" type="submit">Continue to checkout</button>
+              <p class="form-note" id="details-status" role="status"></p>
+            </form>
+          </div>
+        </section>
+
+        <section id="checkout" class="section tight-top" hidden>
+          <div class="section-head">
+            <p class="eyebrow">Step 3</p>
+            <h2 id="checkout-heading">Checkout</h2>
+            <p>Review the services, then leave a way for KABAMAN to confirm the quote. Placing the order does not take payment.</p>
+          </div>
+          <div class="order-layout">
+            <div class="panel">
+              <h3>Services in this order</h3>
+              <div id="checkout-summary"></div>
+              <button type="button" class="btn btn-ghost" id="back-to-order">Edit order</button>
+            </div>
+            <form id="checkout-form" class="panel stack-form" novalidate aria-labelledby="checkout-heading">
+              <label>
+                Name
+                <input id="customer-name" name="name" type="text" required maxlength="100" autocomplete="name" />
+              </label>
+              <label>
+                Email
+                <input id="customer-email" name="email" type="email" required maxlength="120" autocomplete="email" />
+              </label>
+              <label>
+                Phone or WhatsApp, optional
+                <input
+                  id="customer-phone"
+                  name="phone"
+                  type="tel"
+                  maxlength="40"
+                  autocomplete="tel"
+                  placeholder="Optional"
+                />
+              </label>
+              <button class="btn btn-gold" type="submit">Place service order</button>
+              <p class="reassure">
+                This saves your service request on this page. KABAMAN confirms the quote with you afterward. Nothing is charged.
+              </p>
+              <p class="form-note" id="checkout-status" role="status"></p>
+            </form>
+          </div>
+        </section>
+      </div>
+
+      <section id="confirmation" class="section tight-top" hidden tabindex="-1">
+        <p class="eyebrow">Order reference</p>
+        <h2 id="confirm-title" tabindex="-1">Your service order is placed</h2>
+        <p class="order-ref" id="order-ref"></p>
+        <p class="lede">
+          Thank you. KABAMAN will source and import this for you, then confirm the quote. Nothing has been charged.
+        </p>
+        <div id="confirm-summary"></div>
+        <p class="fine">Your order reference is saved in this browser. This page does not take payment.</p>
+        <div class="hero-actions">
+          <a class="btn btn-gold" href="index.html">Back to home</a>
+          <button type="button" class="btn btn-ghost" id="order-again">Order another service</button>
+        </div>
+      </section>
+    </main>
+
+    <a class="order-dock" id="order-dock" href="#your-order" hidden>
+      <span data-dock-count>0 shipments in your order</span>
+      <strong>Review</strong>
+    </a>
+
+    <footer class="footer">
+      <img class="logo-full" src="assets/logo.jpg" alt="KABAMAN" />
+      <p class="slogan">LA QUALITÉ PRIORITÉ</p>
+      <p>Importation. Sourcing. Inspection.</p>
+    </footer>
+    <script src="js/store.js"></script>
+    <script src="script.js"></script>
+    <script src="js/order.js"></script>
+  </body>
+</html>
