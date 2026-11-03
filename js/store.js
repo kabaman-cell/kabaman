@@ -229,6 +229,13 @@
     return writeJson(ORDERS_KEY, orders.slice(-30)) ? copy : null;
   }
 
+  function deleteOrder(ref) {
+    var orders = readOrders().filter(function (order) {
+      return order.ref !== ref;
+    });
+    return writeJson(ORDERS_KEY, orders);
+  }
+
   function updateOrder(ref, patch) {
     var orders = readOrders();
     var found = null;
@@ -256,6 +263,7 @@
     readOrders: readOrders,
     saveOrder: saveOrder,
     updateOrder: updateOrder,
+    deleteOrder: deleteOrder,
     nextRef: nextRef,
     cartUnits: cartUnits,
     shipmentLabel: shipmentLabel,

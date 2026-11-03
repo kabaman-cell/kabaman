@@ -4,37 +4,79 @@
   var form = document.getElementById("site-form");
   var sloganInput = document.getElementById("edit-slogan");
   var welcomeInput = document.getElementById("edit-welcome");
+  var lineInput = document.getElementById("edit-line");
   var nameInputs = [
     document.getElementById("edit-service-0"),
     document.getElementById("edit-service-1"),
     document.getElementById("edit-service-2"),
   ];
+  var lineInputs = [
+    document.getElementById("edit-line-0"),
+    document.getElementById("edit-line-1"),
+    document.getElementById("edit-line-2"),
+  ];
+  var priceInputs = [
+    document.getElementById("edit-price-0"),
+    document.getElementById("edit-price-1"),
+    document.getElementById("edit-price-2"),
+  ];
+  var importRate = document.getElementById("edit-import-rate");
+  var importMax = document.getElementById("edit-import-max");
+  var inspectionUsd = document.getElementById("edit-inspection-usd");
   var siteNote = document.getElementById("site-note");
   var list = document.getElementById("order-list");
 
   function fillForm(site) {
+    var prices = site.prices || {};
     sloganInput.value = site.slogan;
     welcomeInput.value = site.welcome;
+    lineInput.value = site.line || "";
+    importRate.value = prices.importPerKg || 25;
+    importMax.value = prices.importMaxKg || 100;
+    inspectionUsd.value = prices.inspectionUsd || 100;
     site.services.forEach(function (item, index) {
       if (nameInputs[index]) nameInputs[index].value = item.name;
+      if (lineInputs[index]) lineInputs[index].value = item.line || "";
+      if (priceInputs[index]) priceInputs[index].value = item.price || "";
     });
   }
 
-  function orders() {
-    return window.KABAMAN.readOrders();
-  }
-
   function field(label, value) {
+    if (!value) return null;
     var wrap = document.createElement("p");
     var strong = document.createElement("strong");
     strong.textContent = label + ": ";
-    wrap.append(strong, document.createTextNode(value || "—"));
+    wrap.append(strong, document.createTextNode(String(value)));
     return wrap;
+  }
+
+  function idView(order) {
+    var contact = order.contact || {};
+    var image = contact.idImage || "";
+    if (!image) {
+      var note = contact.idFileName ? contact.idFileName + " — No picture saved" : "";
+      return field("ID", note);
+    }
+    var link = document.createElement("a");
+    link.href = image;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.className = "admin-id-link";
+    if (image.indexOf("data:application/pdf") === 0) {
+      link.textContent = "Open ID (" + (contact.idFileName || "PDF") + ")";
+      return link;
+    }
+    var img = document.createElement("img");
+    img.className = "admin-id";
+    img.src = image;
+    img.alt = "ID document for " + order.ref;
+    link.appendChild(img);
+    return link;
   }
 
   function paintOrders() {
     list.replaceChildren();
-    var rows = orders();
+    var rows = window.KABAMAN.readOrders();
     if (!rows.length) {
       var empty = document.createElement("p");
       empty.textContent = "No orders yet.";
@@ -50,29 +92,30 @@
       var goods = order.goods || {};
       var contact = order.contact || {};
       var service = goods.service || (order.services[0] && order.services[0].name) || "";
-      var action = goods.action || (order.services[0] && order.services[0].action) || "";
+      var link = goods.links && goods.links[0] ? goods.links[0].url : "";
       [
-        ["Service", action && action !== service ? service + " — " + action : service],
+        ["Service", service],
         ["Name", contact.name],
-        ["Ask for sample", goods.sample || ""],
+        ["Ask for sample", goods.sample],
+        ["Description", goods.description],
+        ["Product link", link],
         ["Wilaya", goods.wilaya || contact.wilaya],
         ["Phone", contact.phone],
         ["Email", contact.email],
-        ["Description", goods.description],
-        ["Product link", goods.links && goods.links[0] ? goods.links[0].url : ""],
-        ["ID file", contact.idFileName],
-        ["Status", order.status],
-        ["MOQ", goods.moq ? String(goods.moq) : ""],
-        ["Target unit price", goods.targetPrice || ""],
-        ["Currency", goods.currency || ""],
-        ["Country", goods.country || contact.country || ""],
-        ["Shipment information", goods.shipment || ""],
+        ["Country", goods.country || contact.country],
+        ["Address", goods.address || contact.address],
+        ["Shipment information", goods.shipment],
         ["Weight", goods.weight ? goods.weight + " kg" : ""],
-        ["Service price", goods.servicePrice || ""],
-        ["Payment method", order.paymentMethod || ""],
+        ["Service price", goods.servicePrice],
+        ["Payment method", order.paymentMethod],
+        ["Status", order.status],
       ].forEach(function (pair) {
-        card.appendChild(field(pair[0], pair[1]));
+        var row = field(pair[0], pair[1]);
+        if (row) card.appendChild(row);
       });
+
+      var picture = idView(order);
+      if (picture) card.appendChild(picture);
 
       var confirm = document.createElement("button");
       confirm.type = "button";
@@ -103,7 +146,15 @@
         window.KABAMAN.updateOrder(order.ref, { reply: reply.value.trim() });
         paintOrders();
       });
-      card.append(replyLabel, reply, saveReply);
+      var remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn btn-gold";
+      remove.textContent = "Delete order";
+      remove.addEventListener("click", function () {
+        window.KABAMAN.deleteOrder(order.ref);
+        paintOrders();
+      });
+      card.append(replyLabel, reply, saveReply, remove);
       list.appendChild(card);
     });
   }
@@ -113,14 +164,33 @@
     paintOrders();
   });
 
+  importRate.addEventListener("input", function () {
+    if (importRate.value) priceInputs[0].value = importRate.value + " USD / kg";
+  });
+  inspectionUsd.addEventListener("input", function () {
+    if (inspectionUsd.value) priceInputs[2].value = inspectionUsd.value + " USD";
+  });
+
   form.addEventListener("submit", function (event) {
     event.preventDefault();
     var site = window.KABAMAN_SITE.get();
     window.KABAMAN_SITE.save({
       slogan: sloganInput.value.trim(),
       welcome: welcomeInput.value.trim(),
+      line: lineInput.value.trim(),
+      prices: {
+        importPerKg: Number(importRate.value),
+        importMaxKg: Number(importMax.value),
+        inspectionUsd: Number(inspectionUsd.value),
+      },
       services: site.services.map(function (item, index) {
-        return { name: nameInputs[index].value.trim() || item.name };
+        return {
+          name: nameInputs[index].value.trim() || item.name,
+          note: item.note,
+          line: lineInputs[index].value.trim(),
+          price: priceInputs[index].value.trim(),
+          action: item.action,
+        };
       }),
     });
     siteNote.textContent = "Saved on this browser. Reload the customer page to see it.";

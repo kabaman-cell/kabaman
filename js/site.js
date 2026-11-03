@@ -4,10 +4,11 @@
     slogan: "LA QUALITÉ PRIORITÉ",
     welcome: "KABAMAN brings what you want to your door.",
     line: "From the world to your hands",
+    prices: { importPerKg: 25, importMaxKg: 100, inspectionUsd: 100 },
     services: [
-      { name: "Importation", note: "Up to 100 kg", action: "" },
-      { name: "Sourcing", note: "", action: "" },
-      { name: "Inspection", note: "", action: "" },
+      { name: "Importation", note: "Up to 100 kg", line: "Service clé en main", price: "25 USD / kg", action: "" },
+      { name: "Sourcing", note: "", line: "Trouvez les meilleurs fournisseurs", price: "Free", action: "" },
+      { name: "Inspection", note: "", line: "Inspection des échantillons", price: "100 USD", action: "" },
     ],
   };
   var defaults = fallback;
@@ -26,17 +27,39 @@
     }
   }
 
+  function textOr(value, fallback) {
+    return typeof value === "string" && value.trim() ? value.trim() : (fallback || "");
+  }
+
+  function numberOr(value, fallback) {
+    var n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : fallback;
+  }
+
   function merge(base, saved) {
+    var basePrices = base.prices || fallback.prices;
+    var savedPrices = saved && saved.prices ? saved.prices : {};
     var services = base.services.map(function (item, index) {
-      var over = saved && saved.services && saved.services[index];
-      var name = over && typeof over.name === "string" && over.name.trim() ? over.name.trim() : item.name;
+      var over = saved && saved.services && saved.services[index] ? saved.services[index] : {};
+      var name = textOr(over.name, item.name);
       if (name === "Door to door service" || name === "Import Now" || name === "Source Now") name = item.name;
-      return { name: name, note: item.note, action: item.action };
+      return {
+        name: name,
+        note: textOr(over.note, item.note),
+        line: textOr(over.line, item.line),
+        price: textOr(over.price, item.price),
+        action: textOr(over.action, item.action),
+      };
     });
     return {
-      slogan: saved && typeof saved.slogan === "string" && saved.slogan.trim() ? saved.slogan.trim() : base.slogan,
-      welcome: saved && typeof saved.welcome === "string" && saved.welcome.trim() ? saved.welcome.trim() : base.welcome,
-      line: base.line,
+      slogan: textOr(saved && saved.slogan, base.slogan),
+      welcome: textOr(saved && saved.welcome, base.welcome),
+      line: textOr(saved && saved.line, base.line),
+      prices: {
+        importPerKg: numberOr(savedPrices.importPerKg, basePrices.importPerKg),
+        importMaxKg: numberOr(savedPrices.importMaxKg, basePrices.importMaxKg),
+        inspectionUsd: numberOr(savedPrices.inspectionUsd, basePrices.inspectionUsd),
+      },
       services: services,
     };
   }
@@ -66,15 +89,17 @@
       var button = document.querySelector('[data-pick-service="' + index + '"]');
       if (button) {
         var title = button.querySelector(".choice-title");
-        var line = button.querySelector(".choice-line");
-        var price = button.querySelector(".choice-price");
+        var choiceLine = button.querySelector(".choice-line");
+        var choicePrice = button.querySelector(".choice-price");
         var image = button.querySelector("img");
         if (title) title.textContent = item.name;
         else if (image) image.alt = item.name;
         else button.textContent = item.name;
+        if (choiceLine) choiceLine.textContent = item.line || "";
+        if (choicePrice) choicePrice.textContent = item.price || "";
         var label = item.name;
-        if (line && line.textContent) label += ". " + line.textContent;
-        if (price && price.textContent) label += ". " + price.textContent;
+        if (item.line) label += ". " + item.line;
+        if (item.price) label += ". " + item.price;
         button.setAttribute("aria-label", label);
       }
     });
@@ -94,7 +119,8 @@
       }
     }
     var help = document.getElementById("service-help");
-    if (help && site.services[0]) help.textContent = site.services[0].name + " is up to 100 kg.";
+    var maxKg = site.prices && site.prices.importMaxKg ? site.prices.importMaxKg : 100;
+    if (help && site.services[0]) help.textContent = site.services[0].name + " is up to " + maxKg + " kg.";
     var pressed = document.querySelector('[data-pick-service][aria-pressed="true"]');
     var title = document.getElementById("service-detail-title");
     if (pressed && title && select) {

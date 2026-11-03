@@ -933,7 +933,16 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); }
 }
 .admin-order h3 { margin: 0 0 8px; color: var(--gold-soft); }
 .admin-order p { margin: 0 0 4px; }
-.admin-order .btn { margin-top: 12px; }
+.admin-order .btn { margin-top: 12px; margin-right: 8px; }
+.admin-service { border: 1px solid var(--line); margin: 16px 0; padding: 8px 14px 14px; }
+.admin-service legend { color: var(--gold); font-family: Cinzel, serif; padding: 0 6px; }
+.admin-id {
+  display: block;
+  width: min(100%, 240px);
+  margin: 8px 0;
+  border: 1px solid var(--line);
+}
+.admin-id-link { color: var(--gold-soft); }
 
 @media (max-width: 1080px) {
   .nav-toggle { display: inline-block; font: inherit; }

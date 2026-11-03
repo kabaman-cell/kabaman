@@ -44,7 +44,8 @@
   const idScanInput = document.getElementById("id-scan");
   const idName = document.getElementById("id-file-name");
   const confirmation = document.getElementById("link-confirmation");
-  let idFile = { name: "", attached: false };
+  let idFile = { name: "", attached: false, dataUrl: "", pending: false };
+  let idReady = Promise.resolve();
   let activeServiceIndex = null;
 
   function sourcingMode() {
@@ -103,7 +104,21 @@
     paintPrices();
   }
 
-  const USD_PER_KG = 25;
+  function siteSettings() {
+    const site = window.KABAMAN_SITE && window.KABAMAN_SITE.get();
+    const prices = site && site.prices ? site.prices : {};
+    const perKg = Number(prices.importPerKg);
+    const maxKg = Number(prices.importMaxKg);
+    const inspection = Number(prices.inspectionUsd);
+    const services = site && site.services ? site.services : [];
+    return {
+      perKg: Number.isFinite(perKg) && perKg > 0 ? perKg : 25,
+      maxKg: Number.isFinite(maxKg) && maxKg > 0 ? maxKg : 100,
+      inspection: Number.isFinite(inspection) && inspection > 0 ? inspection : 100,
+      sourcingPrice: (services[1] && services[1].price) || "Free",
+      inspectionLabel: (services[2] && services[2].price) || "",
+    };
+  }
 
   function formatUsd(amount) {
     const rounded = Math.round(amount * 10) / 10;
@@ -122,9 +137,10 @@
     if (!raw) return null;
     const value = Number(raw);
     if (!Number.isFinite(value)) return { bad: true };
-    if (value > 100) {
-      input.value = "100";
-      return { kg: 100 };
+    const maxKg = siteSettings().maxKg;
+    if (value > maxKg) {
+      input.value = String(maxKg);
+      return { kg: maxKg };
     }
     if (!/^\d+(\.\d)?$/.test(raw) || value < 1) return { bad: true };
     return { kg: Math.round(value * 10) / 10 };
@@ -136,12 +152,17 @@
     const total = document.getElementById("import-total");
     const amount = document.getElementById("amount-line");
     const weight = readWeight();
+    const rates = siteSettings();
+    const importRate = rates.perKg;
+    const inspectionPrice = formatUsd(rates.inspection);
     const importLine = weight && weight.kg
-      ? formatKg(weight.kg) + " = " + formatUsd(weight.kg * USD_PER_KG)
-      : "25 USD / kg";
-    if (fee) fee.textContent = mode === "sourcing" ? "Free" : mode === "inspection" ? "100 USD" : "25 USD / kg";
+      ? formatKg(weight.kg) + " = " + formatUsd(weight.kg * importRate)
+      : formatUsd(importRate).replace(" USD", "") + " USD / kg";
+    if (fee) fee.textContent = mode === "sourcing" ? rates.sourcingPrice : mode === "inspection" ? inspectionPrice : importLine;
     if (total) total.textContent = importLine;
-    if (amount) amount.textContent = mode === "sourcing" ? "Free" : mode === "inspection" ? "100 USD" : importLine;
+    if (amount) amount.textContent = mode === "sourcing" ? rates.sourcingPrice : mode === "inspection" ? inspectionPrice : importLine;
+    const weightField = document.getElementById("import-weight");
+    if (weightField) weightField.max = String(rates.maxKg);
   }
 
   function showError(message, field) {
@@ -278,11 +299,68 @@
     button.addEventListener("click", () => openService(Number(button.getAttribute("data-pick-service"))));
   });
 
+  function readFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function shrinkImage(dataUrl) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1200;
+        let width = img.width;
+        let height = img.height;
+        if (width > max) {
+          height = Math.round(height * (max / width));
+          width = max;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.72));
+      };
+      img.onerror = () => resolve("");
+      img.src = dataUrl;
+    });
+  }
+
+  function compressId(file) {
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (isPdf) {
+      if (file.size > 1.5 * 1024 * 1024) return Promise.resolve("");
+      return readFile(file);
+    }
+    return readFile(file).then(shrinkImage);
+  }
+
   function rememberId(file) {
     if (!file) return;
-    idFile = { name: file.name, attached: true };
+    idFile = { name: file.name, attached: true, dataUrl: "", pending: true };
     idName.textContent = "Selected: " + file.name;
     showError("");
+    const chosen = file;
+    idReady = compressId(chosen).then((dataUrl) => {
+      if (idFile.name !== chosen.name) return;
+      idFile = { name: chosen.name, attached: true, dataUrl: dataUrl || "", pending: false };
+    }).catch(() => {
+      if (idFile.name !== chosen.name) return;
+      idFile = { name: chosen.name, attached: true, dataUrl: "", pending: false };
+    });
+  }
+
+  function idContact(extra) {
+    return Object.assign({
+      idFileName: idFile.name,
+      idAttached: true,
+      idImage: idFile.dataUrl || "",
+    }, extra || {});
   }
 
   idFileInput.addEventListener("change", () => rememberId(idFileInput.files && idFileInput.files[0]));
@@ -303,8 +381,11 @@
     });
   }
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (idFile.pending) {
+      try { await idReady; } catch (err) { /* keep the file name if the picture cannot be read */ }
+    }
     if (inspectionMode()) {
       submitInspection();
       return;
@@ -356,7 +437,7 @@
       [phoneInput, !phone, "Add a phone number."],
       [emailInput, emailBad, "Enter a valid email."],
       [addressInput, !address, "Add the delivery address."],
-      [weightInput, !weight || weight.bad, "Enter a weight from 1 to 100 kg, with at most one decimal."],
+      [weightInput, !weight || weight.bad, "Enter a weight from 1 to " + siteSettings().maxKg + " kg, with at most one decimal."],
       [document.getElementById("order-payment"), paymentInvalid(), "Select a payment method."],
     ];
     let firstBad = null;
@@ -394,21 +475,19 @@
         wilaya: wilaya,
         address: address,
         weight: weight.kg,
-        servicePrice: formatUsd(weight.kg * USD_PER_KG),
-        amountUsd: Math.round(weight.kg * USD_PER_KG * 10) / 10,
+        servicePrice: formatUsd(weight.kg * siteSettings().perKg),
+        amountUsd: Math.round(weight.kg * siteSettings().perKg * 10) / 10,
         links: [
           { url: parsed.url, label: parsed.label },
         ],
       },
-      contact: {
+      contact: idContact({
         name: name,
         email: email,
         phone: phone,
         wilaya: wilaya,
         address: address,
-        idFileName: idFile.name,
-        idAttached: true,
-      },
+      }),
       paymentMethod: readPayment(),
       status: "Awaiting ID confirmation",
       reviewWindow: "24 hours",
@@ -437,7 +516,7 @@
       ["Email", email],
       ["Address", address],
       ["Weight", formatKg(weight.kg)],
-      ["Service price", formatUsd(weight.kg * USD_PER_KG)],
+      ["Service price", formatUsd(weight.kg * siteSettings().perKg)],
     ].forEach((pair) => {
       const dt = document.createElement("dt");
       dt.textContent = pair[0];
@@ -493,15 +572,11 @@
         service: service,
         action: action,
         sample: sample,
-        servicePrice: "Free",
+        servicePrice: siteSettings().sourcingPrice,
         amountUsd: 0,
         links: [{ url: parsed.url, label: parsed.label }],
       },
-      contact: {
-        name: name,
-        idFileName: idFile.name,
-        idAttached: true,
-      },
+      contact: idContact({ name: name }),
       paymentMethod: readPayment(),
       status: "Waiting for sourcing price",
     });
@@ -525,7 +600,7 @@
       ["Customer name", name],
       ["Ask for sample", sample],
       ["Product link", parsed.url],
-      ["Service price", "Free"],
+      ["Service price", order.goods.servicePrice || "Free"],
     ].forEach((pair) => {
       const dt = document.createElement("dt");
       dt.textContent = pair[0];
@@ -586,15 +661,10 @@
         country: country,
         address: address,
         shipment: shipment,
-        servicePrice: "100 USD",
-        amountUsd: 100,
+        servicePrice: formatUsd(siteSettings().inspection),
+        amountUsd: siteSettings().inspection,
       },
-      contact: {
-        address: address,
-        country: country,
-        idFileName: idFile.name,
-        idAttached: true,
-      },
+      contact: idContact({ address: address, country: country }),
       paymentMethod: readPayment(),
       status: "Awaiting ID confirmation",
       reviewWindow: "24 hours",
@@ -611,7 +681,7 @@
       ["Country", country],
       ["Address", address],
       ["Shipment information", shipment],
-      ["Service price", "100 USD"],
+      ["Service price", formatUsd(siteSettings().inspection)],
       ["Payment method", readPayment()],
     ].forEach((pair) => {
       const dt = document.createElement("dt");
@@ -739,6 +809,11 @@
 
   window.addEventListener("focus", refreshOrder);
   window.addEventListener("storage", refreshOrder);
-  if (window.KABAMAN_SITE) window.KABAMAN_SITE.whenReady(refreshOrder);
-  else refreshOrder();
+  function onSiteReady() {
+    paintPrices();
+    refreshOrder();
+  }
+
+  if (window.KABAMAN_SITE) window.KABAMAN_SITE.whenReady(onSiteReady);
+  else onSiteReady();
 })();

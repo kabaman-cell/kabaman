@@ -33,15 +33,54 @@
       <label for="edit-welcome">Welcome sentence
         <input id="edit-welcome" type="text" maxlength="160" required />
       </label>
-      <label for="edit-service-0">Service 1 name
-        <input id="edit-service-0" type="text" maxlength="60" required />
+      <label for="edit-line">Tagline
+        <input id="edit-line" type="text" maxlength="80" required />
       </label>
-      <label for="edit-service-1">Service 2 name
-        <input id="edit-service-1" type="text" maxlength="60" required />
-      </label>
-      <label for="edit-service-2">Service 3 name
-        <input id="edit-service-2" type="text" maxlength="60" required />
-      </label>
+      <fieldset class="admin-service">
+        <legend>Importation</legend>
+        <label for="edit-service-0">Name
+          <input id="edit-service-0" type="text" maxlength="60" required />
+        </label>
+        <label for="edit-line-0">Subtitle
+          <input id="edit-line-0" type="text" maxlength="80" />
+        </label>
+        <label for="edit-price-0">Price line
+          <input id="edit-price-0" type="text" maxlength="40" />
+        </label>
+        <label for="edit-import-rate">USD per kg
+          <input id="edit-import-rate" type="number" min="1" step="1" required />
+        </label>
+        <label for="edit-import-max">Maximum kg
+          <input id="edit-import-max" type="number" min="1" step="1" required />
+        </label>
+      </fieldset>
+      <fieldset class="admin-service">
+        <legend>Sourcing</legend>
+        <label for="edit-service-1">Name
+          <input id="edit-service-1" type="text" maxlength="60" required />
+        </label>
+        <label for="edit-line-1">Subtitle
+          <input id="edit-line-1" type="text" maxlength="80" />
+        </label>
+        <label for="edit-price-1">Price line
+          <input id="edit-price-1" type="text" maxlength="40" />
+        </label>
+      </fieldset>
+      <fieldset class="admin-service">
+        <legend>Inspection</legend>
+        <label for="edit-service-2">Name
+          <input id="edit-service-2" type="text" maxlength="60" required />
+        </label>
+        <label for="edit-line-2">Subtitle
+          <input id="edit-line-2" type="text" maxlength="80" />
+        </label>
+        <label for="edit-price-2">Price line
+          <input id="edit-price-2" type="text" maxlength="40" />
+        </label>
+        <label for="edit-inspection-usd">Price in USD
+          <input id="edit-inspection-usd" type="number" min="1" step="1" required />
+        </label>
+      </fieldset>
       <div class="admin-actions">
         <button class="btn btn-gold" type="submit">Save</button>
         <button class="btn btn-gold" id="site-reset" type="button">Reset</button>
