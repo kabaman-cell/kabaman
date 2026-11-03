@@ -1,15 +1,15 @@
 {
   "slogan": "LA QUALITÉ PRIORITÉ",
-  "welcome": "KABAMAN brings what you want to your door.",
+  "welcome": "KABAMAN.LOGISTIQUE",
   "line": "From the world to your hands",
   "prices": {
-    "importPerKg": 25,
+    "importPerKg": 24.99,
     "importMaxKg": 100,
-    "inspectionUsd": 100
+    "inspectionUsd": 99.99
   },
   "services": [
-    { "name": "Importation", "note": "Up to 100 kg", "line": "Service clé en main", "price": "25 USD / kg", "action": "" },
-    { "name": "Sourcing", "note": "", "line": "Trouvez les meilleurs fournisseurs", "price": "Free", "action": "" },
-    { "name": "Inspection", "note": "", "line": "Inspection des échantillons", "price": "100 USD", "action": "" }
+    { "name": "Importation", "note": "Up to 100 kg", "line": "Service clé en main", "price": "24,99 USD / kg", "action": "" },
+    { "name": "Sourcing", "note": "", "line": "Trouvez les meilleurs fournisseurs", "price": "19,99 USD", "action": "" },
+    { "name": "Inspection", "note": "", "line": "Inspection des échantillons", "price": "99,99 USD", "action": "" }
   ]
 }

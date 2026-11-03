@@ -112,17 +112,17 @@
     const inspection = Number(prices.inspectionUsd);
     const services = site && site.services ? site.services : [];
     return {
-      perKg: Number.isFinite(perKg) && perKg > 0 ? perKg : 25,
+      perKg: Number.isFinite(perKg) && perKg > 0 ? perKg : 24.99,
       maxKg: Number.isFinite(maxKg) && maxKg > 0 ? maxKg : 100,
-      inspection: Number.isFinite(inspection) && inspection > 0 ? inspection : 100,
-      sourcingPrice: (services[1] && services[1].price) || "Free",
+      inspection: Number.isFinite(inspection) && inspection > 0 ? inspection : 99.99,
+      sourcingPrice: (services[1] && services[1].price) || "19,99 USD",
       inspectionLabel: (services[2] && services[2].price) || "",
     };
   }
 
   function formatUsd(amount) {
-    const rounded = Math.round(amount * 10) / 10;
-    return (rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1)) + " USD";
+    const rounded = Math.round(Number(amount) * 100) / 100;
+    return rounded.toFixed(2).replace(".", ",") + " USD";
   }
 
   function formatKg(kg) {
@@ -733,6 +733,50 @@
     hideSteps();
   }
 
+  function customerStatus(order) {
+    const label = window.KABAMAN.orderStatus(order);
+    if (isSourcingOrder(order) && (order.status === "Waiting for sourcing price" || label === "New Orders")) {
+      return "Waiting for sourcing price";
+    }
+    return label;
+  }
+
+  function customerWait(order) {
+    const label = window.KABAMAN.orderStatus(order);
+    if (isSourcingOrder(order) && (order.status === "Waiting for sourcing price" || label === "New Orders")) {
+      return "Waiting for sourcing price.";
+    }
+    if (label === "Pending Verification") {
+      return "Your order has been placed. Please wait while we confirm your ID. Confirmation within 24 hours.";
+    }
+    return "";
+  }
+
+  function paintLiveLink(order) {
+    const slot = document.getElementById("live-link");
+    if (!slot) return;
+    slot.replaceChildren();
+    window.KABAMAN.productUrls(order).forEach((item, index) => {
+      if (index) slot.appendChild(document.createTextNode(" "));
+      const anchor = document.createElement("a");
+      anchor.href = item.href;
+      anchor.target = "_blank";
+      anchor.rel = "noopener noreferrer";
+      anchor.textContent = item.href;
+      slot.appendChild(anchor);
+    });
+  }
+
+  function paintLive(order) {
+    document.getElementById("live-ref").textContent = order.ref;
+    document.getElementById("live-status").textContent = customerStatus(order);
+    document.getElementById("live-wait").textContent = customerWait(order);
+    const fileName = order.contact && order.contact.idFileName;
+    document.getElementById("live-id").textContent = fileName ? "ID received for review: " + fileName : "";
+    document.getElementById("live-reply").textContent = order.reply ? order.reply : "";
+    paintLiveLink(order);
+  }
+
   function refreshOrder() {
     const order = latestOrder();
     const panel = document.getElementById("live-order");
@@ -751,12 +795,7 @@
     }
     if (isSourcingOrder(order)) {
       if (panel) panel.hidden = false;
-      document.getElementById("live-ref").textContent = order.ref;
-      document.getElementById("live-status").textContent = "Waiting for sourcing price";
-      document.getElementById("live-wait").textContent = "Waiting for sourcing price.";
-      const fileName = order.contact && order.contact.idFileName;
-      document.getElementById("live-id").textContent = fileName ? "ID received for review: " + fileName : "";
-      document.getElementById("live-reply").textContent = order.reply ? order.reply : "";
+      paintLive(order);
       showLaterSteps(false);
       setStep2Locked(true);
       setStep3Locked(true);
@@ -766,12 +805,7 @@
     }
     if (isInspectionOrder(order)) {
       if (panel) panel.hidden = false;
-      document.getElementById("live-ref").textContent = order.ref;
-      document.getElementById("live-status").textContent = order.status || "Awaiting ID confirmation";
-      document.getElementById("live-wait").textContent = "Your order has been placed. Please wait while we confirm your ID. Confirmation within 24 hours.";
-      const fileName = order.contact && order.contact.idFileName;
-      document.getElementById("live-id").textContent = fileName ? "ID received for review: " + fileName : "";
-      document.getElementById("live-reply").textContent = order.reply ? order.reply : "";
+      paintLive(order);
       showLaterSteps(false);
       setStep2Locked(true);
       setStep3Locked(true);
@@ -781,15 +815,8 @@
     if (lede) lede.hidden = false;
     showLaterSteps(true);
     if (panel) panel.hidden = false;
-    document.getElementById("live-ref").textContent = order.ref;
-    document.getElementById("live-status").textContent = order.status || "";
-    document.getElementById("live-wait").textContent = order.status === "Awaiting ID confirmation"
-      ? "Your order has been placed. Please wait while we confirm your ID. Confirmation within 24 hours."
-      : "";
-    const fileName = order.contact && order.contact.idFileName;
-    document.getElementById("live-id").textContent = fileName ? "ID received for review: " + fileName : "";
-    document.getElementById("live-reply").textContent = order.reply ? order.reply : "";
-    const confirmed = order.status === "ID confirmed";
+    paintLive(order);
+    const confirmed = window.KABAMAN.identityVerified(order);
     setStep2Locked(!confirmed);
     setStep3Locked(!(confirmed && order.negotiationSent));
     if (order.goods && order.goods.moq) setMoq(order.goods.moq);

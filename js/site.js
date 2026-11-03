@@ -2,13 +2,13 @@
   var KEY = "kabaman.site";
   var fallback = {
     slogan: "LA QUALITÉ PRIORITÉ",
-    welcome: "KABAMAN brings what you want to your door.",
+    welcome: "KABAMAN.LOGISTIQUE",
     line: "From the world to your hands",
-    prices: { importPerKg: 25, importMaxKg: 100, inspectionUsd: 100 },
+    prices: { importPerKg: 24.99, importMaxKg: 100, inspectionUsd: 99.99 },
     services: [
-      { name: "Importation", note: "Up to 100 kg", line: "Service clé en main", price: "25 USD / kg", action: "" },
-      { name: "Sourcing", note: "", line: "Trouvez les meilleurs fournisseurs", price: "Free", action: "" },
-      { name: "Inspection", note: "", line: "Inspection des échantillons", price: "100 USD", action: "" },
+      { name: "Importation", note: "Up to 100 kg", line: "Service clé en main", price: "24,99 USD / kg", action: "" },
+      { name: "Sourcing", note: "", line: "Trouvez les meilleurs fournisseurs", price: "19,99 USD", action: "" },
+      { name: "Inspection", note: "", line: "Inspection des échantillons", price: "99,99 USD", action: "" },
     ],
   };
   var defaults = fallback;
@@ -36,7 +36,31 @@
     return Number.isFinite(n) && n > 0 ? n : fallback;
   }
 
+  function oldOfficialPrices(saved) {
+    if (!saved) return false;
+    var prices = saved.prices || {};
+    var services = saved.services || [];
+    var importPrice = services[0] && services[0].price;
+    var sourcingPrice = services[1] && services[1].price;
+    var inspectionPrice = services[2] && services[2].price;
+    return Number(prices.importPerKg) === 25 &&
+      Number(prices.inspectionUsd) === 100 &&
+      (!importPrice || importPrice === "25 USD / kg") &&
+      (!sourcingPrice || sourcingPrice === "Free") &&
+      (!inspectionPrice || inspectionPrice === "100 USD");
+  }
+
   function merge(base, saved) {
+    if (oldOfficialPrices(saved)) {
+      saved = Object.assign({}, saved, {
+        prices: {},
+        services: (saved.services || []).map(function (item) {
+          var copy = Object.assign({}, item);
+          delete copy.price;
+          return copy;
+        }),
+      });
+    }
     var basePrices = base.prices || fallback.prices;
     var savedPrices = saved && saved.prices ? saved.prices : {};
     var services = base.services.map(function (item, index) {
@@ -48,12 +72,20 @@
         note: textOr(over.note, item.note),
         line: textOr(over.line, item.line),
         price: textOr(over.price, item.price),
-        action: textOr(over.action, item.action),
+        action: (function () {
+          var action = textOr(over.action, item.action);
+          if (action === "Import Now" || action === "Source Now") return item.action || "";
+          return action;
+        })(),
       };
     });
     return {
       slogan: textOr(saved && saved.slogan, base.slogan),
-      welcome: textOr(saved && saved.welcome, base.welcome),
+      welcome: (function () {
+        var welcome = textOr(saved && saved.welcome, base.welcome);
+        if (welcome === "KABAMAN brings what you want to your door.") return base.welcome;
+        return welcome;
+      })(),
       line: textOr(saved && saved.line, base.line),
       prices: {
         importPerKg: numberOr(savedPrices.importPerKg, basePrices.importPerKg),

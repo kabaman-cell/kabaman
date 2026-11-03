@@ -236,6 +236,52 @@
     return writeJson(ORDERS_KEY, orders);
   }
 
+  var ORDER_STATUSES = [
+    "New Orders",
+    "Pending Verification",
+    "Identity Verified",
+    "Waiting for Payment / Next Step",
+    "Processing",
+    "Completed",
+    "Cancelled",
+  ];
+
+  function orderStatus(order) {
+    var status = (order && order.status) || "";
+    if (status === "Awaiting ID confirmation") return "Pending Verification";
+    if (status === "ID confirmed") return "Identity Verified";
+    if (status === "Waiting for sourcing price" || status === "") return "New Orders";
+    if (ORDER_STATUSES.indexOf(status) !== -1) return status;
+    return "New Orders";
+  }
+
+  function identityVerified(order) {
+    var status = orderStatus(order);
+    return status === "Identity Verified" ||
+      status === "Waiting for Payment / Next Step" ||
+      status === "Processing" ||
+      status === "Completed";
+  }
+
+  function safeHttp(value) {
+    try {
+      var url = new URL(String(value));
+      if (url.protocol === "http:" || url.protocol === "https:") return url.href;
+    } catch (error) {
+      return "";
+    }
+    return "";
+  }
+
+  function productUrls(order) {
+    var goods = (order && order.goods) || {};
+    var links = Array.isArray(goods.links) ? goods.links : [];
+    return links.map(function (item) {
+      var href = safeHttp(item && item.url);
+      return href ? { href: href, label: (item && item.label) || href } : null;
+    }).filter(Boolean);
+  }
+
   function updateOrder(ref, patch) {
     var orders = readOrders();
     var found = null;
@@ -264,6 +310,10 @@
     saveOrder: saveOrder,
     updateOrder: updateOrder,
     deleteOrder: deleteOrder,
+    orderStatuses: ORDER_STATUSES,
+    orderStatus: orderStatus,
+    identityVerified: identityVerified,
+    productUrls: productUrls,
     nextRef: nextRef,
     cartUnits: cartUnits,
     shipmentLabel: shipmentLabel,

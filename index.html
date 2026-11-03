@@ -7,9 +7,9 @@
   <meta name="description" content="KABAMAN brings what you want to your door. Importation service up to 100 kg, sourcing service, and door to door service. From the world to your hands." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Oswald:wght@500;600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
+  <link rel="icon" href="assets/logo.jpg?v=circle" type="image/jpeg" />
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -17,7 +17,7 @@
   <header class="nav">
     <div class="nav-inner">
       <a class="brand" href="#top">
-        <span class="brand-mark"><img src="assets/logo.jpg" alt="KABAMAN" /></span>
+        <span class="brand-mark"><img src="assets/logo.jpg?v=circle" alt="KABAMAN" /></span>
         <strong>KABAMAN</strong>
       </a>
     </div>
@@ -26,29 +26,28 @@
   <main id="main">
     <section class="hero" id="top">
       <div class="hero-brand">
-        <img class="logo-full" src="assets/logo.jpg" alt="KABAMAN" />
-        <p class="slogan" id="brand-slogan">LA QUALITÉ PRIORITÉ</p>
-        <h1 id="brand-welcome">KABAMAN brings what you want to your door.</h1>
+        <img class="logo-full" src="assets/logo.jpg?v=circle" alt="KABAMAN" />
+        <h1 id="brand-welcome">KABAMAN.LOGISTIQUE</h1>
         <p class="eyebrow" id="brand-line">From the world to your hands</p>
       </div>
       <div class="poster-grid">
-        <button type="button" class="choice-btn" data-pick-service="1" aria-pressed="false" aria-label="Sourcing. Trouvez les meilleurs fournisseurs. Free">
+        <button type="button" class="choice-btn" data-pick-service="1" aria-pressed="false" aria-label="Sourcing. Trouvez les meilleurs fournisseurs. 19,99 USD">
           <span class="choice-mark" aria-hidden="true"></span>
           <span class="choice-title">Sourcing</span>
           <span class="choice-line">Trouvez les meilleurs fournisseurs</span>
-          <span class="choice-price">Free</span>
+          <span class="choice-price">19,99 USD</span>
         </button>
-        <button type="button" class="choice-btn" data-pick-service="0" aria-pressed="false" aria-label="Importation. Service clé en main. 25 USD / kg">
+        <button type="button" class="choice-btn" data-pick-service="0" aria-pressed="false" aria-label="Importation. Service clé en main. 24,99 USD / kg">
           <span class="choice-mark" aria-hidden="true"></span>
           <span class="choice-title">Importation</span>
           <span class="choice-line">Service clé en main</span>
-          <span class="choice-price">25 USD / kg</span>
+          <span class="choice-price">24,99 USD / kg</span>
         </button>
-        <button type="button" class="choice-btn" data-pick-service="2" aria-pressed="false" aria-label="Inspection. Inspection des échantillons. 100 USD">
+        <button type="button" class="choice-btn" data-pick-service="2" aria-pressed="false" aria-label="Inspection. Inspection des échantillons. 99,99 USD">
           <span class="choice-mark" aria-hidden="true"></span>
           <span class="choice-title">Inspection</span>
           <span class="choice-line">Inspection des échantillons</span>
-          <span class="choice-price">100 USD</span>
+          <span class="choice-price">99,99 USD</span>
         </button>
       </div>
     </section>
@@ -89,10 +88,11 @@
           <p>Status <strong id="live-status"></strong></p>
           <p id="live-wait" class="confirm-wait"></p>
           <p id="live-id"></p>
+          <p id="live-link"></p>
           <p id="live-reply"></p>
         </section>
         <form id="import-form" class="product-search link-order" novalidate>
-          <p id="service-fee" class="service-fee">25 USD / kg</p>
+          <p id="service-fee" class="service-fee">24,99 USD / kg</p>
           <label for="order-service" data-mode="import">Service</label>
           <select id="order-service" data-mode="import" required>
             <option value="Importation" selected>Importation</option>
@@ -104,7 +104,7 @@
             <label for="import-weight">Weight</label>
             <input id="import-weight" type="number" inputmode="decimal" min="1" max="100" step="0.1" placeholder="kg" />
             <p class="search-hint">Kilograms. Whole number or one decimal, from 1 to 100.</p>
-            <p id="import-total" class="service-fee">25 USD / kg</p>
+            <p id="import-total" class="service-fee">24,99 USD / kg</p>
           </div>
           <div data-mode="inspection" hidden>
             <label for="inspect-country">Country</label>
@@ -236,7 +236,7 @@
             <option value="Eddahabia">Eddahabia</option>
             <option value="Cash">Cash</option>
           </select>
-          <p id="amount-line" class="service-fee">25 USD / kg</p>
+          <p id="amount-line" class="service-fee">24,99 USD / kg</p>
           <p class="search-hint">Nothing is charged on this page.</p>
           <button class="btn btn-gold" type="submit">Order on KABAMAN</button>
         </form>

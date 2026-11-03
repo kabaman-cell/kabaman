@@ -25,15 +25,27 @@
   var inspectionUsd = document.getElementById("edit-inspection-usd");
   var siteNote = document.getElementById("site-note");
   var list = document.getElementById("order-list");
+  var filters = document.getElementById("order-filters");
+  var openRef = "";
+  var activeFilter = "All";
+  var tones = {
+    "New Orders": "status-new",
+    "Pending Verification": "status-pending",
+    "Identity Verified": "status-verified",
+    "Waiting for Payment / Next Step": "status-payment",
+    "Processing": "status-processing",
+    "Completed": "status-completed",
+    "Cancelled": "status-cancelled",
+  };
 
   function fillForm(site) {
     var prices = site.prices || {};
     sloganInput.value = site.slogan;
     welcomeInput.value = site.welcome;
     lineInput.value = site.line || "";
-    importRate.value = prices.importPerKg || 25;
+    importRate.value = prices.importPerKg || 24.99;
     importMax.value = prices.importMaxKg || 100;
-    inspectionUsd.value = prices.inspectionUsd || 100;
+    inspectionUsd.value = prices.inspectionUsd || 99.99;
     site.services.forEach(function (item, index) {
       if (nameInputs[index]) nameInputs[index].value = item.name;
       if (lineInputs[index]) lineInputs[index].value = item.line || "";
@@ -75,88 +87,248 @@
   }
 
   function paintOrders() {
+    var rows = window.KABAMAN.readOrders().slice().reverse();
+    var statuses = window.KABAMAN.orderStatuses;
+    filters.replaceChildren();
+    var counts = { All: rows.length };
+    statuses.forEach(function (label) { counts[label] = 0; });
+    rows.forEach(function (order) {
+      counts[window.KABAMAN.orderStatus(order)] += 1;
+    });
+    ["All"].concat(statuses).forEach(function (label) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label + " (" + counts[label] + ")";
+      if (label === activeFilter) button.className = "is-active";
+      button.addEventListener("click", function () {
+        activeFilter = label;
+        paintOrders();
+      });
+      filters.appendChild(button);
+    });
+
     list.replaceChildren();
-    var rows = window.KABAMAN.readOrders();
     if (!rows.length) {
       var empty = document.createElement("p");
       empty.textContent = "No orders yet.";
       list.appendChild(empty);
       return;
     }
-    rows.slice().reverse().forEach(function (order) {
-      var card = document.createElement("article");
-      card.className = "admin-order";
-      var title = document.createElement("h3");
-      title.textContent = order.ref;
-      card.appendChild(title);
-      var goods = order.goods || {};
-      var contact = order.contact || {};
-      var service = goods.service || (order.services[0] && order.services[0].name) || "";
-      var link = goods.links && goods.links[0] ? goods.links[0].url : "";
-      [
-        ["Service", service],
-        ["Name", contact.name],
-        ["Ask for sample", goods.sample],
-        ["Description", goods.description],
-        ["Product link", link],
-        ["Wilaya", goods.wilaya || contact.wilaya],
-        ["Phone", contact.phone],
-        ["Email", contact.email],
-        ["Country", goods.country || contact.country],
-        ["Address", goods.address || contact.address],
-        ["Shipment information", goods.shipment],
-        ["Weight", goods.weight ? goods.weight + " kg" : ""],
-        ["Service price", goods.servicePrice],
-        ["Payment method", order.paymentMethod],
-        ["Status", order.status],
-      ].forEach(function (pair) {
-        var row = field(pair[0], pair[1]);
-        if (row) card.appendChild(row);
-      });
 
-      var picture = idView(order);
-      if (picture) card.appendChild(picture);
-
-      var confirm = document.createElement("button");
-      confirm.type = "button";
-      confirm.className = "btn btn-gold";
-      if (order.status === "ID confirmed") {
-        confirm.textContent = "ID confirmed";
-        confirm.disabled = true;
-      } else {
-        confirm.textContent = "Confirm ID";
-        confirm.addEventListener("click", function () {
-          window.KABAMAN.updateOrder(order.ref, { status: "ID confirmed" });
-          paintOrders();
-        });
-      }
-      card.appendChild(confirm);
-
-      var replyLabel = document.createElement("label");
-      replyLabel.textContent = "Reply";
-      var reply = document.createElement("textarea");
-      reply.maxLength = 500;
-      reply.rows = 3;
-      reply.value = order.reply || "";
-      var saveReply = document.createElement("button");
-      saveReply.type = "button";
-      saveReply.className = "btn btn-gold";
-      saveReply.textContent = "Save reply";
-      saveReply.addEventListener("click", function () {
-        window.KABAMAN.updateOrder(order.ref, { reply: reply.value.trim() });
-        paintOrders();
+    var groups = activeFilter === "All" ? statuses : [activeFilter];
+    var shown = 0;
+    groups.forEach(function (label) {
+      var groupRows = rows.filter(function (order) {
+        return window.KABAMAN.orderStatus(order) === label;
       });
-      var remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "btn btn-gold";
-      remove.textContent = "Delete order";
-      remove.addEventListener("click", function () {
-        window.KABAMAN.deleteOrder(order.ref);
-        paintOrders();
-      });
-      card.append(replyLabel, reply, saveReply, remove);
-      list.appendChild(card);
+      if (!groupRows.length) return;
+      shown += groupRows.length;
+      var section = document.createElement("section");
+      section.className = "order-group";
+      var heading = document.createElement("h3");
+      heading.textContent = label;
+      section.appendChild(heading);
+      section.appendChild(orderTable(groupRows));
+      list.appendChild(section);
     });
+    if (!shown) {
+      var none = document.createElement("p");
+      none.textContent = "No orders in " + activeFilter + ".";
+      list.appendChild(none);
+    }
+  }
+
+  function orderTable(rows) {
+    var wrap = document.createElement("div");
+    wrap.className = "admin-table-wrap";
+    var table = document.createElement("table");
+    table.className = "admin-table";
+    var head = document.createElement("thead");
+    var headRow = document.createElement("tr");
+    ["Reference", "Customer", "Service", "Product link", "Status", "Actions"].forEach(function (name) {
+      var th = document.createElement("th");
+      th.textContent = name;
+      headRow.appendChild(th);
+    });
+    head.appendChild(headRow);
+    var body = document.createElement("tbody");
+    rows.forEach(function (order) {
+      body.appendChild(orderRow(order));
+      if (openRef === order.ref) body.appendChild(detailRow(order));
+    });
+    table.append(head, body);
+    wrap.appendChild(table);
+    return wrap;
+  }
+
+  function orderRow(order) {
+    var goods = order.goods || {};
+    var contact = order.contact || {};
+    var status = window.KABAMAN.orderStatus(order);
+    var tr = document.createElement("tr");
+
+    var refCell = document.createElement("td");
+    var ref = document.createElement("strong");
+    ref.textContent = order.ref;
+    refCell.appendChild(ref);
+    if (order.placedAt) {
+      var when = document.createElement("div");
+      when.className = "admin-when";
+      var date = new Date(order.placedAt);
+      when.textContent = isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+      if (when.textContent) refCell.appendChild(when);
+    }
+    tr.appendChild(refCell);
+
+    var customer = document.createElement("td");
+    var customerBox = document.createElement("div");
+    customerBox.className = "admin-customer";
+    var name = document.createElement("strong");
+    name.textContent = contact.name || "No name";
+    customerBox.appendChild(name);
+    [contact.phone, contact.email].forEach(function (value) {
+      if (!value) return;
+      var line = document.createElement("span");
+      line.textContent = value;
+      customerBox.appendChild(line);
+    });
+    customer.appendChild(customerBox);
+    tr.appendChild(customer);
+
+    var service = goods.service || (order.services[0] && order.services[0].name) || "";
+    var serviceCell = document.createElement("td");
+    serviceCell.textContent = service;
+    if (goods.servicePrice) {
+      var price = document.createElement("div");
+      price.className = "admin-muted";
+      price.textContent = goods.servicePrice;
+      serviceCell.appendChild(price);
+    }
+    tr.appendChild(serviceCell);
+
+    var linkCell = document.createElement("td");
+    var urls = window.KABAMAN.productUrls(order);
+    if (!urls.length) {
+      linkCell.textContent = "—";
+    } else {
+      urls.forEach(function (item, index) {
+        if (index) linkCell.appendChild(document.createElement("br"));
+        var anchor = document.createElement("a");
+        anchor.className = "admin-link";
+        anchor.href = item.href;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        anchor.textContent = item.href;
+        anchor.title = item.href;
+        linkCell.appendChild(anchor);
+      });
+    }
+    tr.appendChild(linkCell);
+
+    var statusCell = document.createElement("td");
+    var pill = document.createElement("span");
+    pill.className = "status-pill " + (tones[status] || "status-new");
+    pill.textContent = status;
+    var select = document.createElement("select");
+    select.className = "status-select";
+    select.setAttribute("aria-label", "Status for " + order.ref);
+    window.KABAMAN.orderStatuses.forEach(function (label) {
+      var option = document.createElement("option");
+      option.value = label;
+      option.textContent = label;
+      if (label === status) option.selected = true;
+      select.appendChild(option);
+    });
+    select.addEventListener("change", function () {
+      window.KABAMAN.updateOrder(order.ref, { status: select.value });
+      paintOrders();
+    });
+    statusCell.append(pill, document.createElement("br"), select);
+    tr.appendChild(statusCell);
+
+    var actions = document.createElement("td");
+    var actionBox = document.createElement("div");
+    actionBox.className = "admin-actions-cell";
+    var details = document.createElement("button");
+    details.type = "button";
+    details.className = "btn-quiet";
+    details.textContent = openRef === order.ref ? "Hide" : "Details";
+    details.addEventListener("click", function () {
+      openRef = openRef === order.ref ? "" : order.ref;
+      paintOrders();
+    });
+    actionBox.appendChild(details);
+    if (!window.KABAMAN.identityVerified(order)) {
+      var verify = document.createElement("button");
+      verify.type = "button";
+      verify.className = "btn btn-gold";
+      verify.textContent = "Verify ID";
+      verify.addEventListener("click", function () {
+        window.KABAMAN.updateOrder(order.ref, { status: "Identity Verified" });
+        paintOrders();
+      });
+      actionBox.appendChild(verify);
+    }
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "btn-quiet danger";
+    remove.textContent = "Delete";
+    remove.addEventListener("click", function () {
+      if (!window.confirm("Delete " + order.ref + "?")) return;
+      window.KABAMAN.deleteOrder(order.ref);
+      if (openRef === order.ref) openRef = "";
+      paintOrders();
+    });
+    actionBox.appendChild(remove);
+    actions.appendChild(actionBox);
+    tr.appendChild(actions);
+    return tr;
+  }
+
+  function detailRow(order) {
+    var goods = order.goods || {};
+    var contact = order.contact || {};
+    var tr = document.createElement("tr");
+    tr.className = "admin-details";
+    var td = document.createElement("td");
+    td.colSpan = 6;
+    var grid = document.createElement("div");
+    grid.className = "admin-detail-grid";
+    [
+      ["Ask for sample", goods.sample],
+      ["Description", goods.description],
+      ["Wilaya", goods.wilaya || contact.wilaya],
+      ["Country", goods.country || contact.country],
+      ["Address", goods.address || contact.address],
+      ["Shipment information", goods.shipment],
+      ["Weight", goods.weight ? goods.weight + " kg" : ""],
+      ["Payment method", order.paymentMethod],
+    ].forEach(function (pair) {
+      var row = field(pair[0], pair[1]);
+      if (row) grid.appendChild(row);
+    });
+    var picture = idView(order);
+    if (picture) grid.appendChild(picture);
+    td.appendChild(grid);
+
+    var replyLabel = document.createElement("label");
+    replyLabel.textContent = "Reply";
+    var reply = document.createElement("textarea");
+    reply.maxLength = 500;
+    reply.rows = 3;
+    reply.value = order.reply || "";
+    var saveReply = document.createElement("button");
+    saveReply.type = "button";
+    saveReply.className = "btn btn-gold";
+    saveReply.textContent = "Save reply";
+    saveReply.addEventListener("click", function () {
+      window.KABAMAN.updateOrder(order.ref, { reply: reply.value.trim() });
+      openRef = order.ref;
+      paintOrders();
+    });
+    td.append(replyLabel, reply, saveReply);
+    tr.appendChild(td);
+    return tr;
   }
 
   window.KABAMAN_SITE.whenReady(function (site) {
@@ -164,11 +336,17 @@
     paintOrders();
   });
 
+  function moneyLine(value, suffix) {
+    var amount = Number(value);
+    if (!Number.isFinite(amount)) return "";
+    return amount.toFixed(2).replace(".", ",") + suffix;
+  }
+
   importRate.addEventListener("input", function () {
-    if (importRate.value) priceInputs[0].value = importRate.value + " USD / kg";
+    if (importRate.value) priceInputs[0].value = moneyLine(importRate.value, " USD / kg");
   });
   inspectionUsd.addEventListener("input", function () {
-    if (inspectionUsd.value) priceInputs[2].value = inspectionUsd.value + " USD";
+    if (inspectionUsd.value) priceInputs[2].value = moneyLine(inspectionUsd.value, " USD");
   });
 
   form.addEventListener("submit", function (event) {

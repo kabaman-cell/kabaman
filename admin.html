@@ -8,13 +8,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="assets/logo.jpg" type="image/jpeg" />
+  <link rel="icon" href="assets/logo.jpg?v=circle" type="image/jpeg" />
 </head>
 <body>
   <header class="nav">
     <div class="nav-inner">
       <a class="brand" href="index.html">
-        <span class="brand-mark"><img src="assets/logo.jpg" alt="KABAMAN" /></span>
+        <span class="brand-mark"><img src="assets/logo.jpg?v=circle" alt="KABAMAN" /></span>
         <strong>KABAMAN</strong>
       </a>
       <a class="btn btn-gold nav-import" href="index.html">Customer page</a>
@@ -23,7 +23,15 @@
 
   <main class="admin-page">
     <p class="eyebrow">Admin</p>
-    <h1>Customise the website</h1>
+    <h1>Orders</h1>
+    <p class="admin-note">Each order stays in this browser. Customer details, the ID picture, and the product link open on this page.</p>
+
+    <section class="admin-block" id="orders">
+      <div id="order-filters" class="order-filters"></div>
+      <div id="order-list"></div>
+    </section>
+
+    <h2>Customise the website</h2>
     <p class="admin-note">Changes stay on this browser. Reload the customer page to see them.</p>
 
     <form id="site-form" class="admin-block" novalidate>
@@ -48,7 +56,7 @@
           <input id="edit-price-0" type="text" maxlength="40" />
         </label>
         <label for="edit-import-rate">USD per kg
-          <input id="edit-import-rate" type="number" min="1" step="1" required />
+          <input id="edit-import-rate" type="number" min="0.01" step="0.01" required />
         </label>
         <label for="edit-import-max">Maximum kg
           <input id="edit-import-max" type="number" min="1" step="1" required />
@@ -78,7 +86,7 @@
           <input id="edit-price-2" type="text" maxlength="40" />
         </label>
         <label for="edit-inspection-usd">Price in USD
-          <input id="edit-inspection-usd" type="number" min="1" step="1" required />
+          <input id="edit-inspection-usd" type="number" min="0.01" step="0.01" required />
         </label>
       </fieldset>
       <div class="admin-actions">
@@ -88,10 +96,6 @@
       <p id="site-note" class="admin-note" role="status"></p>
     </form>
 
-    <section class="admin-block">
-      <h2>Orders</h2>
-      <div id="order-list"></div>
-    </section>
   </main>
 
   <script src="js/store.js"></script>
