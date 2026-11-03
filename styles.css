@@ -346,6 +346,7 @@ h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); margin: 0 0 16px; color: var(--gold-
 .nav-import { white-space: nowrap; }
 
 .product-search, .link-order { margin-top: 22px; max-width: 40rem; }
+.link-order .mode-fields { display: grid; gap: 14px; }
 .search-hint { margin: 8px 0 0; color: var(--muted); font-size: 0.88rem; }
 .link-preview { margin: 8px 0; }
 .link-preview a, #confirm-url { color: var(--gold); word-break: break-all; }
@@ -903,7 +904,24 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); }
   margin-bottom: 18px;
 }
 .live-order p { margin: 0 0 6px; }
-#live-reply:empty, #live-id:empty, #live-wait:empty, #live-link:empty { display: none; }
+#live-status.status-verified,
+#confirm-status.status-verified {
+  color: #8fd9a4 !important;
+  background: transparent !important;
+}
+#live-status.status-not-verified,
+#confirm-status.status-not-verified {
+  color: #ff8a8a !important;
+  background: transparent !important;
+}
+#live-reply,
+#confirm-reply { color: #ff8a8a !important; }
+#live-reply:empty,
+#confirm-reply:empty,
+#live-id:empty,
+#live-wait:empty,
+#live-link:empty,
+#confirm-status:empty { display: none; }
 #live-link a { color: var(--gold); word-break: break-all; }
 .admin-page { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 64px; }
 .admin-page h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
@@ -1005,6 +1023,8 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); }
 .status-new { background: rgba(212, 175, 55, 0.22); color: #f0d78c; }
 .status-pending { background: rgba(232, 168, 74, 0.24); color: #f3c27a; }
 .status-verified { background: rgba(120, 190, 130, 0.24); color: #b7e0be; }
+.status-pill.status-verified { background: rgba(120, 190, 130, 0.24); color: #8fd9a4; }
+.status-pill.status-not-verified { background: rgba(180, 70, 70, 0.3); color: #ff8a8a; }
 .status-payment { background: rgba(120, 170, 220, 0.24); color: #c5dff5; }
 .status-processing { background: rgba(246, 239, 217, 0.16); color: #f6efd9; }
 .status-completed { background: rgba(70, 160, 90, 0.3); color: #d8f5df; }

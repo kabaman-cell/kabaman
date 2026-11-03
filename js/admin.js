@@ -29,13 +29,8 @@
   var openRef = "";
   var activeFilter = "All";
   var tones = {
-    "New Orders": "status-new",
-    "Pending Verification": "status-pending",
-    "Identity Verified": "status-verified",
-    "Waiting for Payment / Next Step": "status-payment",
-    "Processing": "status-processing",
-    "Completed": "status-completed",
-    "Cancelled": "status-cancelled",
+    "Verified": "status-verified",
+    "Not verified": "status-not-verified",
   };
 
   function fillForm(site) {
@@ -184,10 +179,13 @@
     var customerBox = document.createElement("div");
     customerBox.className = "admin-customer";
     var name = document.createElement("strong");
-    name.textContent = contact.name || "No name";
+    name.textContent = contact.name || goods.supplierCountry || contact.supplierCountry || "No name";
     customerBox.appendChild(name);
-    [contact.phone, contact.email].forEach(function (value) {
-      if (!value) return;
+    var contactLines = [];
+    if (contact.phone) contactLines.push(contact.phone);
+    else if (goods.supplierPhone || contact.supplierPhone) contactLines.push(goods.supplierPhone || contact.supplierPhone);
+    if (contact.email) contactLines.push(contact.email);
+    contactLines.forEach(function (value) {
       var line = document.createElement("span");
       line.textContent = value;
       customerBox.appendChild(line);
@@ -203,6 +201,17 @@
       price.className = "admin-muted";
       price.textContent = goods.servicePrice;
       serviceCell.appendChild(price);
+    }
+    if (goods.quantity >= 250) {
+      var pieces = document.createElement("div");
+      pieces.className = "admin-muted";
+      pieces.textContent = goods.quantity + " pieces";
+      serviceCell.appendChild(pieces);
+    } else if (goods.weight) {
+      var kilos = document.createElement("div");
+      kilos.className = "admin-muted";
+      kilos.textContent = goods.weight + " kg";
+      serviceCell.appendChild(kilos);
     }
     tr.appendChild(serviceCell);
 
@@ -264,7 +273,7 @@
       verify.className = "btn btn-gold";
       verify.textContent = "Verify ID";
       verify.addEventListener("click", function () {
-        window.KABAMAN.updateOrder(order.ref, { status: "Identity Verified" });
+        window.KABAMAN.updateOrder(order.ref, { status: "Verified" });
         paintOrders();
       });
       actionBox.appendChild(verify);
@@ -292,18 +301,31 @@
     tr.className = "admin-details";
     var td = document.createElement("td");
     td.colSpan = 6;
+    var inspection = (function () {
+      var serviceId = order.services && order.services[0] && order.services[0].id;
+      var serviceName = goods.service || (order.services[0] && order.services[0].name);
+      return serviceId === "inspection" || serviceName === "Inspection";
+    })();
     var grid = document.createElement("div");
     grid.className = "admin-detail-grid";
-    [
-      ["Ask for sample", goods.sample],
-      ["Description", goods.description],
+    var pairs = [
+      ["Phone number", contact.phone],
+      ["Product specification", goods.specification || goods.description],
+      ["Quantity", goods.quantity >= 250 ? goods.quantity + " pieces" : ""],
       ["Wilaya", goods.wilaya || contact.wilaya],
-      ["Country", goods.country || contact.country],
-      ["Address", goods.address || contact.address],
+      ["Country", inspection ? "" : (goods.country || contact.country)],
+      ["Address", inspection ? "" : (goods.address || contact.address)],
+      ["Supplier country", goods.supplierCountry || (inspection ? (goods.country || contact.country) : "")],
+      ["Supplier address", goods.supplierAddress || (inspection ? (goods.address || contact.address) : "")],
+      ["Supplier phone", goods.supplierPhone || contact.supplierPhone || (inspection ? contact.phone : "")],
+      ["Checklist to inspect", goods.checklist],
+      ["Ask for sample", goods.sample],
       ["Shipment information", goods.shipment],
       ["Weight", goods.weight ? goods.weight + " kg" : ""],
       ["Payment method", order.paymentMethod],
-    ].forEach(function (pair) {
+      ["Email", contact.email],
+    ];
+    pairs.forEach(function (pair) {
       var row = field(pair[0], pair[1]);
       if (row) grid.appendChild(row);
     });

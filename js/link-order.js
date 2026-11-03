@@ -38,8 +38,8 @@
   const nameInput = document.getElementById("link-name");
   const wilayaInput = document.getElementById("link-wilaya");
   const phoneInput = document.getElementById("link-phone");
-  const emailInput = document.getElementById("link-email");
   const addressInput = document.getElementById("link-address");
+  const quantityInput = document.getElementById("import-quantity");
   const idFileInput = document.getElementById("id-file");
   const idScanInput = document.getElementById("id-scan");
   const idName = document.getElementById("id-file-name");
@@ -60,15 +60,6 @@
     if (sourcingMode()) return "sourcing";
     if (inspectionMode()) return "inspection";
     return "import";
-  }
-
-  function readPayment() {
-    const input = document.getElementById("order-payment");
-    return input ? input.value : "";
-  }
-
-  function paymentInvalid() {
-    return !readPayment();
   }
 
   function isSourcingOrder(order) {
@@ -93,13 +84,15 @@
     });
     hideSteps();
     const nameLabel = document.getElementById("name-label");
-    if (nameLabel) nameLabel.textContent = mode === "sourcing" ? "Customer name" : "Name";
+    if (nameLabel) nameLabel.textContent = "Name";
     const linkLabel = document.getElementById("product-link-label");
-    if (linkLabel) linkLabel.textContent = mode === "sourcing" ? "Product link" : "Paste the product link";
+    if (linkLabel) linkLabel.textContent = "Product link";
     const idLegend = document.getElementById("id-legend");
-    if (idLegend) {
-      idLegend.textContent = mode === "sourcing" ? "ID verification" : mode === "inspection" ? "ID" : "ID document";
-    }
+    if (idLegend) idLegend.textContent = "ID";
+    form.querySelectorAll("[aria-invalid='true']").forEach((el) => markInvalid(el, false));
+    showError("");
+    if (mode === "inspection") preview.hidden = true;
+    else showPreview(currentLink());
     if (mode !== "import") showLaterSteps(false);
     paintPrices();
   }
@@ -125,47 +118,28 @@
     return rounded.toFixed(2).replace(".", ",") + " USD";
   }
 
-  function formatKg(kg) {
-    const rounded = Math.round(kg * 10) / 10;
-    return (rounded % 1 === 0 ? String(rounded) : rounded.toFixed(1)) + " kg";
-  }
-
-  function readWeight() {
-    const input = document.getElementById("import-weight");
-    if (!input) return null;
-    const raw = input.value.trim().replace(",", ".");
+  function readQuantity() {
+    if (!quantityInput) return null;
+    const raw = quantityInput.value.trim();
     if (!raw) return null;
-    const value = Number(raw);
-    if (!Number.isFinite(value)) return { bad: true };
-    const maxKg = siteSettings().maxKg;
-    if (value > maxKg) {
-      input.value = String(maxKg);
-      return { kg: maxKg };
-    }
-    if (!/^\d+(\.\d)?$/.test(raw) || value < 1) return { bad: true };
-    return { kg: Math.round(value * 10) / 10 };
+    if (!/^\d+$/.test(raw)) return { bad: true };
+    const pieces = Number(raw);
+    if (!Number.isFinite(pieces) || pieces < 250) return { bad: true };
+    return { pieces: pieces };
   }
 
   function paintPrices() {
     const mode = formMode();
     const fee = document.getElementById("service-fee");
-    const total = document.getElementById("import-total");
-    const amount = document.getElementById("amount-line");
-    const weight = readWeight();
     const rates = siteSettings();
-    const importRate = rates.perKg;
     const inspectionPrice = formatUsd(rates.inspection);
-    const importLine = weight && weight.kg
-      ? formatKg(weight.kg) + " = " + formatUsd(weight.kg * importRate)
-      : formatUsd(importRate).replace(" USD", "") + " USD / kg";
-    if (fee) fee.textContent = mode === "sourcing" ? rates.sourcingPrice : mode === "inspection" ? inspectionPrice : importLine;
-    if (total) total.textContent = importLine;
-    if (amount) amount.textContent = mode === "sourcing" ? rates.sourcingPrice : mode === "inspection" ? inspectionPrice : importLine;
-    const weightField = document.getElementById("import-weight");
-    if (weightField) weightField.max = String(rates.maxKg);
+    const importLine = formatUsd(rates.perKg).replace(" USD", "") + " USD / kg";
+    const text = mode === "sourcing" ? rates.sourcingPrice : mode === "inspection" ? inspectionPrice : importLine;
+    if (fee) fee.textContent = text;
   }
 
   function showError(message, field) {
+    error.hidden = !message;
     error.textContent = message;
     error.classList.toggle("is-error", Boolean(message));
     const anchor = !field || field === linkInput
@@ -276,9 +250,6 @@
     serviceInput.dispatchEvent(new Event("change", { bubbles: true }));
     const title = document.getElementById("service-detail-title");
     if (title) title.textContent = serviceInput.options[index].textContent;
-    document.querySelectorAll("[data-service-info]").forEach((block) => {
-      block.hidden = Number(block.getAttribute("data-service-info")) !== index;
-    });
     applyFormMode();
     const latest = latestOrder();
     const keepResult = (index === 1 && isSourcingOrder(latest)) || (index === 2 && isInspectionOrder(latest));
@@ -372,12 +343,10 @@
     showPreview(currentLink());
   });
 
-  const weightInput = document.getElementById("import-weight");
-  if (weightInput) {
-    weightInput.addEventListener("input", () => {
-      readWeight();
-      paintPrices();
-      markInvalid(weightInput, false);
+  if (quantityInput) {
+    quantityInput.addEventListener("input", () => {
+      markInvalid(quantityInput, false);
+      showError("");
     });
   }
 
@@ -415,30 +384,23 @@
 
     const service = chosenService();
     const action = chosenAction();
-    const description = descriptionInput.value.trim();
+    const specification = descriptionInput.value.trim();
     const name = nameInput.value.trim();
     const wilaya = wilayaInput.value;
     const phone = phoneInput.value.trim();
-    const email = emailInput.value.trim();
     const address = addressInput.value.trim();
-    const weightInput = document.getElementById("import-weight");
-    const weight = readWeight();
-    descriptionInput.value = description;
+    const quantity = readQuantity();
+    descriptionInput.value = specification;
     nameInput.value = name;
     phoneInput.value = phone;
-    emailInput.value = email;
     addressInput.value = address;
-    const emailBad = !email || !emailInput.checkValidity();
     const checks = [
-      [serviceInput, !service, "Select a service."],
-      [descriptionInput, !description, "Add a description with quantity, color, and size."],
-      [nameInput, !name, "Add your full name."],
-      [wilayaInput, !wilaya, "Select a wilaya."],
+      [quantityInput, !quantity || quantity.bad, "Enter a whole number of at least 250 pieces."],
+      [descriptionInput, !specification, "Add the product specification."],
+      [nameInput, !name, "Add your name."],
       [phoneInput, !phone, "Add a phone number."],
-      [emailInput, emailBad, "Enter a valid email."],
-      [addressInput, !address, "Add the delivery address."],
-      [weightInput, !weight || weight.bad, "Enter a weight from 1 to " + siteSettings().maxKg + " kg, with at most one decimal."],
-      [document.getElementById("order-payment"), paymentInvalid(), "Select a payment method."],
+      [wilayaInput, !wilaya, "Select a wilaya."],
+      [addressInput, !address, "Add the address."],
     ];
     let firstBad = null;
     checks.forEach((item) => {
@@ -469,27 +431,22 @@
         goods: parsed.label,
         service: service,
         action: action,
-        description: description,
-        moq: readMoq(),
-        currency: currencyInput ? currencyInput.value : "DA",
+        specification: specification,
+        quantity: quantity.pieces,
         wilaya: wilaya,
         address: address,
-        weight: weight.kg,
-        servicePrice: formatUsd(weight.kg * siteSettings().perKg),
-        amountUsd: Math.round(weight.kg * siteSettings().perKg * 10) / 10,
+        servicePrice: formatUsd(siteSettings().perKg).replace(" USD", "") + " USD / kg",
         links: [
           { url: parsed.url, label: parsed.label },
         ],
       },
       contact: idContact({
         name: name,
-        email: email,
         phone: phone,
         wilaya: wilaya,
         address: address,
       }),
-      paymentMethod: readPayment(),
-      status: "Awaiting ID confirmation",
+      status: "Not verified",
       reviewWindow: "24 hours",
     });
 
@@ -508,15 +465,14 @@
     facts.replaceChildren();
     [
       ["Service", service],
-      ["Action", action],
-      ["Description", description],
+      ["Product link", parsed.url],
+      ["Quantity", quantity.pieces + " pieces"],
+      ["Product specification", specification],
       ["Name", name],
-      ["Wilaya", wilaya],
       ["Phone number", phone],
-      ["Email", email],
+      ["Wilaya", wilaya],
       ["Address", address],
-      ["Weight", formatKg(weight.kg)],
-      ["Service price", formatUsd(weight.kg * siteSettings().perKg)],
+      ["Service price", formatUsd(siteSettings().perKg).replace(" USD", "") + " USD / kg"],
     ].forEach((pair) => {
       const dt = document.createElement("dt");
       dt.textContent = pair[0];
@@ -525,9 +481,13 @@
       facts.append(dt, dd);
     });
     paintService();
-    if (payDescription) payDescription.textContent = description;
+    if (payDescription) payDescription.textContent = specification;
     if (payWilaya) payWilaya.textContent = wilaya;
     paintCurrency();
+    document.getElementById("link-confirm-title").textContent = "Your import order is placed";
+    document.getElementById("confirm-wait").textContent = "Your order has been placed. Please wait while we confirm your ID. Confirmation within 24 hours.";
+    const lede = document.getElementById("confirm-lede");
+    if (lede) lede.hidden = false;
     document.getElementById("confirm-id").textContent =
       "ID received for review: " + idFile.name;
     form.hidden = true;
@@ -539,13 +499,12 @@
 
   function submitSourcing(parsed) {
     const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
     nameInput.value = name;
-    const sampleInput = document.getElementById("ask-sample");
-    const sample = sampleInput ? sampleInput.value : "";
+    phoneInput.value = phone;
     const checks = [
-      [nameInput, !name, "Add the customer name."],
-      [sampleInput, !sample, "Choose Yes or No."],
-      [document.getElementById("order-payment"), paymentInvalid(), "Select a payment method."],
+      [nameInput, !name, "Add your name."],
+      [phoneInput, !phone, "Add a phone number."],
     ];
     let firstBad = null;
     checks.forEach((item) => {
@@ -571,23 +530,20 @@
         goods: parsed.label,
         service: service,
         action: action,
-        sample: sample,
         servicePrice: siteSettings().sourcingPrice,
-        amountUsd: 0,
         links: [{ url: parsed.url, label: parsed.label }],
       },
-      contact: idContact({ name: name }),
-      paymentMethod: readPayment(),
-      status: "Waiting for sourcing price",
+      contact: idContact({ name: name, phone: phone }),
+      status: "Not verified",
     });
     if (!saved) {
       showError("This browser blocked saving the order. Allow site data for this page and try again.");
       return;
     }
-    showSourcingResult(saved, parsed, name, sample);
+    showSourcingResult(saved, parsed, name, phone);
   }
 
-  function showSourcingResult(order, parsed, name, sample) {
+  function showSourcingResult(order, parsed, name, phone) {
     document.getElementById("link-ref").textContent = order.ref;
     document.getElementById("confirm-label").textContent = parsed.label;
     const confirmUrl = document.getElementById("confirm-url");
@@ -597,10 +553,10 @@
     facts.replaceChildren();
     [
       ["Service", order.goods.service],
-      ["Customer name", name],
-      ["Ask for sample", sample],
+      ["Name", name],
+      ["Phone number", phone],
       ["Product link", parsed.url],
-      ["Service price", order.goods.servicePrice || "Free"],
+      ["Service price", order.goods.servicePrice || ""],
     ].forEach((pair) => {
       const dt = document.createElement("dt");
       dt.textContent = pair[0];
@@ -622,31 +578,32 @@
   }
 
   function submitInspection() {
-    const countryInput = document.getElementById("inspect-country");
-    const shipmentInput = document.getElementById("shipment-info");
+    const countryInput = document.getElementById("supplier-country");
+    const supplierAddressInput = document.getElementById("supplier-address");
+    const supplierPhoneInput = document.getElementById("supplier-phone");
+    const checklistInput = document.getElementById("inspect-checklist");
     const country = countryInput.value.trim();
-    const address = addressInput.value.trim();
-    const shipment = shipmentInput.value.trim();
+    const supplierAddress = supplierAddressInput.value.trim();
+    const supplierPhone = supplierPhoneInput.value.trim();
+    const checklist = checklistInput.value.trim();
     countryInput.value = country;
-    addressInput.value = address;
-    shipmentInput.value = shipment;
+    supplierAddressInput.value = supplierAddress;
+    supplierPhoneInput.value = supplierPhone;
+    checklistInput.value = checklist;
     const checks = [
-      [countryInput, !country, "Add the country."],
-      [addressInput, !address, "Add the address."],
-      [shipmentInput, !shipment, "Add the shipment information."],
-      [document.getElementById("order-payment"), paymentInvalid(), "Select a payment method."],
+      [countryInput, !country, "Add the country of the customer's supplier."],
+      [supplierAddressInput, !supplierAddress, "Add the address of the customer's supplier."],
+      [supplierPhoneInput, !supplierPhone, "Add the phone number of the supplier."],
+      [checklistInput, !checklist, "Add the checklist to inspect."],
     ];
     let firstBad = null;
     checks.forEach((item) => {
       markInvalid(item[0], item[1]);
       if (item[1] && !firstBad) firstBad = item;
     });
-    if (!idFile.attached && !firstBad) {
-      firstBad = [idFileInput, true, "Add an ID document or scan it with your camera."];
-    }
     if (firstBad) {
       showError(firstBad[2], firstBad[0]);
-      if (firstBad[0] !== idFileInput) firstBad[0].focus();
+      firstBad[0].focus();
       return;
     }
     const service = chosenService();
@@ -658,15 +615,18 @@
       goods: {
         service: service,
         action: action,
-        country: country,
-        address: address,
-        shipment: shipment,
+        supplierCountry: country,
+        supplierAddress: supplierAddress,
+        supplierPhone: supplierPhone,
+        checklist: checklist,
         servicePrice: formatUsd(siteSettings().inspection),
-        amountUsd: siteSettings().inspection,
       },
-      contact: idContact({ address: address, country: country }),
-      paymentMethod: readPayment(),
-      status: "Awaiting ID confirmation",
+      contact: {
+        supplierCountry: country,
+        supplierAddress: supplierAddress,
+        supplierPhone: supplierPhone,
+      },
+      status: "Not verified",
       reviewWindow: "24 hours",
     });
     if (!saved) {
@@ -678,11 +638,11 @@
     facts.replaceChildren();
     [
       ["Service", service],
-      ["Country", country],
-      ["Address", address],
-      ["Shipment information", shipment],
+      ["Country of the customer's supplier", country],
+      ["Address of the customer's supplier", supplierAddress],
+      ["Phone number of the supplier", supplierPhone],
+      ["Checklist to inspect", checklist],
       ["Service price", formatUsd(siteSettings().inspection)],
-      ["Payment method", readPayment()],
     ].forEach((pair) => {
       const dt = document.createElement("dt");
       dt.textContent = pair[0];
@@ -691,10 +651,10 @@
       facts.append(dt, dd);
     });
     document.getElementById("link-confirm-title").textContent = "Your inspection request is placed";
-    document.getElementById("confirm-wait").textContent = "Your order has been placed. Please wait while we confirm your ID. Confirmation within 24 hours.";
+    document.getElementById("confirm-wait").textContent = "Your inspection request is placed. Nothing has been charged.";
     const lede = document.getElementById("confirm-lede");
     if (lede) lede.hidden = true;
-    document.getElementById("confirm-id").textContent = "ID received for review: " + idFile.name;
+    document.getElementById("confirm-id").textContent = "";
     document.getElementById("confirm-label").textContent = "";
     const confirmUrl = document.getElementById("confirm-url");
     confirmUrl.textContent = "";
@@ -734,19 +694,26 @@
   }
 
   function customerStatus(order) {
-    const label = window.KABAMAN.orderStatus(order);
-    if (isSourcingOrder(order) && (order.status === "Waiting for sourcing price" || label === "New Orders")) {
-      return "Waiting for sourcing price";
+    if (window.KABAMAN.identityVerified(order)) {
+      return { text: "Verified", className: "status-verified" };
     }
-    return label;
+    return { text: "Not verified", className: "status-not-verified" };
+  }
+
+  function paintStatus(el, order) {
+    if (!el) return;
+    const status = customerStatus(order);
+    el.textContent = status.text;
+    el.classList.remove("status-verified", "status-waiting", "status-not-verified");
+    el.classList.add(status.className);
   }
 
   function customerWait(order) {
-    const label = window.KABAMAN.orderStatus(order);
-    if (isSourcingOrder(order) && (order.status === "Waiting for sourcing price" || label === "New Orders")) {
+    if (isSourcingOrder(order) && !window.KABAMAN.identityVerified(order)) {
       return "Waiting for sourcing price.";
     }
-    if (label === "Pending Verification") {
+    const stored = (order && order.status) || "";
+    if (stored === "Pending Verification" || stored === "Awaiting ID confirmation") {
       return "Your order has been placed. Please wait while we confirm your ID. Confirmation within 24 hours.";
     }
     return "";
@@ -769,11 +736,15 @@
 
   function paintLive(order) {
     document.getElementById("live-ref").textContent = order.ref;
-    document.getElementById("live-status").textContent = customerStatus(order);
+    paintStatus(document.getElementById("live-status"), order);
+    paintStatus(document.getElementById("confirm-status"), order);
     document.getElementById("live-wait").textContent = customerWait(order);
     const fileName = order.contact && order.contact.idFileName;
     document.getElementById("live-id").textContent = fileName ? "ID received for review: " + fileName : "";
-    document.getElementById("live-reply").textContent = order.reply ? order.reply : "";
+    const reply = order.reply ? order.reply : "";
+    document.getElementById("live-reply").textContent = reply;
+    const confirmReply = document.getElementById("confirm-reply");
+    if (confirmReply) confirmReply.textContent = reply;
     paintLiveLink(order);
   }
 

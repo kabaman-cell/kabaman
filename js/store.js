@@ -236,31 +236,25 @@
     return writeJson(ORDERS_KEY, orders);
   }
 
-  var ORDER_STATUSES = [
-    "New Orders",
-    "Pending Verification",
+  var ORDER_STATUSES = ["Verified", "Not verified"];
+
+  var VERIFIED_STATUSES = [
+    "Verified",
     "Identity Verified",
+    "ID confirmed",
     "Waiting for Payment / Next Step",
     "Processing",
     "Completed",
-    "Cancelled",
   ];
 
   function orderStatus(order) {
     var status = (order && order.status) || "";
-    if (status === "Awaiting ID confirmation") return "Pending Verification";
-    if (status === "ID confirmed") return "Identity Verified";
-    if (status === "Waiting for sourcing price" || status === "") return "New Orders";
-    if (ORDER_STATUSES.indexOf(status) !== -1) return status;
-    return "New Orders";
+    if (VERIFIED_STATUSES.indexOf(status) !== -1) return "Verified";
+    return "Not verified";
   }
 
   function identityVerified(order) {
-    var status = orderStatus(order);
-    return status === "Identity Verified" ||
-      status === "Waiting for Payment / Next Step" ||
-      status === "Processing" ||
-      status === "Completed";
+    return orderStatus(order) === "Verified";
   }
 
   function safeHttp(value) {

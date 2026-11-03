@@ -54,33 +54,6 @@
 
     <section id="service-detail" class="order-band" hidden>
       <h2 id="service-detail-title">Importation</h2>
-      <div data-service-info="0">
-        <p class="poster-lead">Service clé en main. De l'étranger jusqu'à chez vous.</p>
-        <ul class="info-list">
-          <li>Achat &amp; expédition</li>
-          <li>Transport sécurisé</li>
-          <li>Livraison Door to Door</li>
-          <li>Sécurité, Rapidité, Fiabilité</li>
-        </ul>
-      </div>
-      <div data-service-info="1" hidden>
-        <ul class="info-list">
-          <li>Product link</li>
-          <li>Customer name</li>
-          <li>Ask for sample</li>
-          <li>ID verification</li>
-          <li>Payment method</li>
-        </ul>
-      </div>
-      <div data-service-info="2" hidden>
-        <ul class="info-list">
-          <li>Country</li>
-          <li>Address</li>
-          <li>Shipment information</li>
-          <li>ID</li>
-          <li>Payment method</li>
-        </ul>
-      </div>
       <div id="import" class="order-flow">
         <section id="live-order" class="live-order" hidden>
           <p class="eyebrow">Your order</p>
@@ -93,24 +66,14 @@
         </section>
         <form id="import-form" class="product-search link-order" novalidate>
           <p id="service-fee" class="service-fee">24,99 USD / kg</p>
-          <label for="order-service" data-mode="import">Service</label>
-          <select id="order-service" data-mode="import" required>
+          <label for="order-service" hidden>Service</label>
+          <select id="order-service" hidden>
             <option value="Importation" selected>Importation</option>
             <option value="Sourcing">Sourcing</option>
             <option value="Inspection">Inspection</option>
           </select>
-          <p class="search-hint" id="service-help" data-mode="import">Importation is up to 100 kg.</p>
-          <div data-mode="import">
-            <label for="import-weight">Weight</label>
-            <input id="import-weight" type="number" inputmode="decimal" min="1" max="100" step="0.1" placeholder="kg" />
-            <p class="search-hint">Kilograms. Whole number or one decimal, from 1 to 100.</p>
-            <p id="import-total" class="service-fee">24,99 USD / kg</p>
-          </div>
-          <div data-mode="inspection" hidden>
-            <label for="inspect-country">Country</label>
-            <input id="inspect-country" type="text" maxlength="80" autocomplete="country-name" />
-          </div>
-          <label for="product-link" id="product-link-label" data-mode="import sourcing">Paste the product link</label>
+          <p class="search-hint" id="service-help" hidden></p>
+          <label for="product-link" id="product-link-label" data-mode="import sourcing">Product link</label>
           <input
             data-mode="import sourcing"
             id="product-link"
@@ -120,28 +83,27 @@
             maxlength="500"
             autocomplete="off"
           />
-          <p class="search-hint" id="link-hint" data-mode="import">An Alibaba product link works. Paste the address only — KABAMAN does not open the page.</p>
-          <p id="link-error" class="form-note" role="alert"></p>
+          <p class="search-hint" id="link-hint" data-mode="import sourcing">An Alibaba product link works. Paste the address only — KABAMAN does not open the page.</p>
+          <p id="link-error" class="form-note" role="alert" hidden></p>
           <div id="link-preview" class="link-preview" hidden>
             <p class="eyebrow">Order line</p>
             <h2 id="link-label"></h2>
             <a id="link-url" href="#" rel="noreferrer noopener" target="_blank"></a>
           </div>
-          <label for="link-description" data-mode="import">Description</label>
-          <p class="search-hint" id="description-help" data-mode="import">Include quantity, color, and size.</p>
-          <textarea id="link-description" data-mode="import" maxlength="800" rows="4" aria-describedby="description-help" placeholder="Quantity, color, size, and any other product details"></textarea>
+          <div class="mode-fields" data-mode="import">
+            <label for="import-quantity">Quantity</label>
+            <input id="import-quantity" type="number" inputmode="numeric" min="250" step="1" placeholder="pieces" />
+            <p class="search-hint">Pieces. A whole number of at least 250.</p>
+          </div>
+          <label for="link-description" data-mode="import">Product specification</label>
+          <p class="search-hint" id="description-help" data-mode="import">Quantity details such as color and size.</p>
+          <textarea id="link-description" data-mode="import" maxlength="800" rows="4" aria-describedby="description-help" placeholder="Color, size, and other product specifications"></textarea>
           <label for="link-name" id="name-label" data-mode="import sourcing">Name</label>
           <input id="link-name" data-mode="import sourcing" type="text" maxlength="100" autocomplete="name" />
-          <div data-mode="sourcing" hidden>
-            <label for="ask-sample">Ask for sample</label>
-            <select id="ask-sample">
-              <option value="">Select</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </div>
+          <label for="link-phone" data-mode="import sourcing">Phone number</label>
+          <input id="link-phone" data-mode="import sourcing" type="tel" maxlength="40" autocomplete="tel" inputmode="tel" />
           <label for="link-wilaya" data-mode="import">Wilaya</label>
-          <select id="link-wilaya" data-mode="import" required autocomplete="address-level1">
+          <select id="link-wilaya" data-mode="import" autocomplete="address-level1">
             <option value="">Select a wilaya</option>
             <option value="01 — Adrar">01 — Adrar</option>
             <option value="02 — Chlef">02 — Chlef</option>
@@ -202,18 +164,20 @@
             <option value="57 — El M'Ghair">57 — El M'Ghair</option>
             <option value="58 — El Meniaa">58 — El Meniaa</option>
           </select>
-          <label for="link-phone" data-mode="import">Phone number</label>
-          <input id="link-phone" data-mode="import" type="tel" maxlength="40" autocomplete="tel" inputmode="tel" />
-          <label for="link-email" data-mode="import">Email</label>
-          <input id="link-email" data-mode="import" type="email" maxlength="120" autocomplete="email" />
-          <label for="link-address" data-mode="import inspection">Address</label>
-          <textarea id="link-address" data-mode="import inspection" maxlength="240" rows="3" autocomplete="street-address" placeholder="Street and city"></textarea>
-          <div data-mode="inspection" hidden>
-            <label for="shipment-info">Shipment information</label>
-            <textarea id="shipment-info" maxlength="800" rows="4"></textarea>
+          <label for="link-address" data-mode="import">Address</label>
+          <textarea id="link-address" data-mode="import" maxlength="240" rows="3" autocomplete="street-address" placeholder="Street and city"></textarea>
+          <div class="mode-fields" data-mode="inspection" hidden>
+            <label for="supplier-country">Country of the customer's supplier</label>
+            <input id="supplier-country" type="text" maxlength="80" autocomplete="country-name" />
+            <label for="supplier-address">Address of the customer's supplier</label>
+            <textarea id="supplier-address" maxlength="240" rows="3" placeholder="Street and city"></textarea>
+            <label for="supplier-phone">Phone number of the supplier</label>
+            <input id="supplier-phone" type="tel" maxlength="40" inputmode="tel" />
+            <label for="inspect-checklist">Checklist to inspect</label>
+            <textarea id="inspect-checklist" maxlength="800" rows="4" placeholder="What should be inspected"></textarea>
           </div>
-          <fieldset class="id-upload">
-            <legend id="id-legend">ID document</legend>
+          <fieldset class="id-upload" data-mode="import sourcing">
+            <legend id="id-legend">ID</legend>
             <p class="search-hint">Add a photo or PDF so KABAMAN can review it. This does not verify identity.</p>
             <div class="id-actions">
               <label class="file-btn" for="id-file">
@@ -227,16 +191,6 @@
             </div>
             <p id="id-file-name" class="search-hint" role="status"></p>
           </fieldset>
-          <label for="order-payment">Payment method</label>
-          <select id="order-payment">
-            <option value="">Select a payment method</option>
-            <option value="Mastercard">Mastercard</option>
-            <option value="Visa">Visa</option>
-            <option value="CIB">CIB</option>
-            <option value="Eddahabia">Eddahabia</option>
-            <option value="Cash">Cash</option>
-          </select>
-          <p id="amount-line" class="service-fee">24,99 USD / kg</p>
           <p class="search-hint">Nothing is charged on this page.</p>
           <button class="btn btn-gold" type="submit">Order on KABAMAN</button>
         </form>
@@ -244,6 +198,8 @@
           <p class="eyebrow">Order reference</p>
           <h2 id="link-confirm-title" tabindex="-1">Your import order is placed</h2>
           <p class="order-ref" id="link-ref"></p>
+          <p>Status <strong id="confirm-status"></strong></p>
+          <p id="confirm-reply"></p>
           <p id="confirm-wait" class="confirm-wait">Your order has been placed. Please wait while we confirm your ID. Confirmation within 24 hours.</p>
           <p class="lede" id="confirm-lede">KABAMAN will source and import this item. Quote after review. Nothing has been charged.</p>
           <p id="confirm-label"></p>
