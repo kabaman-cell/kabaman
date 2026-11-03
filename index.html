@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="assets/logo.jpg?v=circle" type="image/jpeg" />
 </head>
-<body>
+<body class="customer">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="nav">
@@ -30,38 +30,7 @@
         <h1 id="brand-welcome">KABAMAN.LOGISTIQUE</h1>
         <p class="eyebrow" id="brand-line">From the world to your hands</p>
       </div>
-      <div class="poster-grid">
-        <button type="button" class="choice-btn" data-pick-service="1" aria-pressed="false" aria-label="Sourcing. Trouvez les meilleurs fournisseurs. 19,99 USD">
-          <span class="choice-mark" aria-hidden="true"></span>
-          <span class="choice-title">Sourcing</span>
-          <span class="choice-line">Trouvez les meilleurs fournisseurs</span>
-          <span class="choice-price">19,99 USD</span>
-        </button>
-        <button type="button" class="choice-btn" data-pick-service="0" aria-pressed="false" aria-label="Importation. Service clé en main. 24,99 USD / kg">
-          <span class="choice-mark" aria-hidden="true"></span>
-          <span class="choice-title">Importation</span>
-          <span class="choice-line">Service clé en main</span>
-          <span class="choice-price">24,99 USD / kg</span>
-        </button>
-        <button type="button" class="choice-btn" data-pick-service="2" aria-pressed="false" aria-label="Inspection. Inspection des échantillons. 99,99 USD">
-          <span class="choice-mark" aria-hidden="true"></span>
-          <span class="choice-title">Inspection</span>
-          <span class="choice-line">Inspection des échantillons</span>
-          <span class="choice-price">99,99 USD</span>
-        </button>
-        <button type="button" class="choice-btn" data-pick-service="3" aria-pressed="false" aria-label="Products. Available goods. On request">
-          <span class="choice-mark" aria-hidden="true"></span>
-          <span class="choice-title">Products</span>
-          <span class="choice-line">Available goods</span>
-          <span class="choice-price">On request</span>
-        </button>
-        <button type="button" class="choice-btn" data-pick-service="4" aria-pressed="false" aria-label="Auction. Unfinished imports and unsold goods. Place a bid">
-          <span class="choice-mark" aria-hidden="true"></span>
-          <span class="choice-title">Auction</span>
-          <span class="choice-line">Unfinished imports and unsold goods</span>
-          <span class="choice-price">Place a bid</span>
-        </button>
-      </div>
+      <div class="poster-grid" id="service-choices"></div>
     </section>
 
     <section id="service-detail" class="order-band" hidden>

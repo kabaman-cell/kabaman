@@ -1,16 +1,38 @@
 (function () {
   var KEY = "kabaman.site";
+  var FORMS = ["sourcing", "importation", "inspection", "products", "auction"];
+  var NAME_FORM = {
+    importation: "importation",
+    sourcing: "sourcing",
+    inspection: "inspection",
+    products: "products",
+    auction: "auction",
+    "door to door service": "importation",
+    "import now": "importation",
+    "source now": "sourcing",
+  };
+  var LEGACY_INDEX_FORM = ["importation", "sourcing", "inspection", "products", "auction"];
   var fallback = {
     slogan: "LA QUALITÉ PRIORITÉ",
     welcome: "KABAMAN.LOGISTIQUE",
     line: "From the world to your hands",
     prices: { importPerKg: 24.99, importMaxKg: 100, inspectionUsd: 99.99 },
+    theme: {
+      background: "#070707",
+      text: "#f6efd9",
+      accent: "#d4af37",
+      buttonBackground: "#0b0b0b",
+      buttonText: "#d4af37",
+      buttonCorners: "square",
+      shimmer: true,
+      logo: "",
+    },
     services: [
-      { name: "Importation", note: "Up to 100 kg", line: "Service clé en main", price: "24,99 USD / kg", action: "" },
-      { name: "Sourcing", note: "", line: "Trouvez les meilleurs fournisseurs", price: "19,99 USD", action: "" },
-      { name: "Inspection", note: "", line: "Inspection des échantillons", price: "99,99 USD", action: "" },
-      { name: "Products", note: "", line: "Available goods", price: "On request", action: "" },
-      { name: "Auction", note: "", line: "Unfinished imports and unsold goods", price: "Place a bid", action: "" },
+      { name: "Sourcing", note: "", line: "Trouvez les meilleurs fournisseurs", price: "19,99 USD", action: "", form: "sourcing" },
+      { name: "Importation", note: "Up to 100 kg", line: "Service clé en main", price: "24,99 USD / kg", action: "", form: "importation" },
+      { name: "Inspection", note: "", line: "Inspection des échantillons", price: "99,99 USD", action: "", form: "inspection" },
+      { name: "Products", note: "", line: "Available goods", price: "On request", action: "", form: "products" },
+      { name: "Auction", note: "", line: "Unfinished imports and unsold goods", price: "Place a bid", action: "", form: "auction" },
     ],
   };
   var defaults = fallback;
@@ -29,22 +51,117 @@
     }
   }
 
-  function textOr(value, fallback) {
-    return typeof value === "string" && value.trim() ? value.trim() : (fallback || "");
+  function textOr(value, fallbackText) {
+    return typeof value === "string" && value.trim() ? value.trim() : (fallbackText || "");
   }
 
-  function numberOr(value, fallback) {
+  function textKeep(value, fallbackText) {
+    if (typeof value === "string") return value.trim();
+    return fallbackText || "";
+  }
+
+  function numberOr(value, fallbackNumber) {
     var n = Number(value);
-    return Number.isFinite(n) && n > 0 ? n : fallback;
+    return Number.isFinite(n) && n > 0 ? n : fallbackNumber;
+  }
+
+  function hexToRgb(hex) {
+    var text = String(hex || "").replace("#", "").trim();
+    if (text.length === 3) text = text[0] + text[0] + text[1] + text[1] + text[2] + text[2];
+    if (!/^[0-9a-fA-F]{6}$/.test(text)) return null;
+    var n = parseInt(text, 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  function rgbToHex(rgb) {
+    return "#" + rgb.map(function (channel) {
+      var value = Math.max(0, Math.min(255, Math.round(channel)));
+      return (value < 16 ? "0" : "") + value.toString(16);
+    }).join("");
+  }
+
+  function colorOr(value, fallbackColor) {
+    var rgb = hexToRgb(value);
+    return rgb ? rgbToHex(rgb) : fallbackColor;
+  }
+
+  function mix(from, to, amount) {
+    var left = hexToRgb(from);
+    var right = hexToRgb(to);
+    if (!left || !right) return from;
+    return rgbToHex(left.map(function (channel, index) {
+      return channel + (right[index] - channel) * amount;
+    }));
+  }
+
+  function hexToRgba(hex, alpha) {
+    var rgb = hexToRgb(hex);
+    if (!rgb) return "rgba(212, 175, 55, " + alpha + ")";
+    return "rgba(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ", " + alpha + ")";
+  }
+
+  function logoOr(value) {
+    if (typeof value !== "string") return "";
+    var text = value.trim();
+    if (!text) return "";
+    if (text.indexOf("data:image/") !== 0) return "";
+    if (text.length > 700000) return "";
+    return text;
+  }
+
+  function knownForm(value) {
+    var key = String(value || "").trim().toLowerCase();
+    if (key === "import") return "importation";
+    return FORMS.indexOf(key) >= 0 ? key : "";
+  }
+
+  function formFromItem(item, index, allowIndexFallback) {
+    var explicit = knownForm(item && item.form);
+    if (explicit) return explicit;
+    var name = String(item && item.name || "").trim().toLowerCase();
+    if (NAME_FORM[name]) return NAME_FORM[name];
+    if (allowIndexFallback && index >= 0 && index < LEGACY_INDEX_FORM.length) return LEGACY_INDEX_FORM[index];
+    return "importation";
+  }
+
+  function findBase(list, form) {
+    for (var i = 0; i < list.length; i += 1) {
+      if (formFromItem(list[i], i, false) === form) return list[i];
+    }
+    return null;
+  }
+
+  function normalizeService(item, index, baseList) {
+    var source = item && typeof item === "object" ? item : {};
+    var form = formFromItem(source, index, true);
+    var base = findBase(baseList, form) || { name: "Service", note: "", line: "", price: "", action: "", form: form };
+    var name = textOr(source.name, base.name || "Service");
+    if (name === "Door to door service" || name === "Import Now" || name === "Source Now") name = base.name || name;
+    var action = textKeep(source.action, base.action || "");
+    if (action === "Import Now" || action === "Source Now") action = base.action || "";
+    return {
+      name: name,
+      note: textKeep(source.note, base.note || ""),
+      line: textKeep(source.line, base.line || ""),
+      price: textKeep(source.price, base.price || ""),
+      action: action,
+      form: form,
+    };
   }
 
   function oldOfficialPrices(saved) {
     if (!saved) return false;
     var prices = saved.prices || {};
     var services = saved.services || [];
-    var importPrice = services[0] && services[0].price;
-    var sourcingPrice = services[1] && services[1].price;
-    var inspectionPrice = services[2] && services[2].price;
+    function priceOf(name, index) {
+      for (var i = 0; i < services.length; i += 1) {
+        if (services[i] && services[i].name === name) return services[i].price;
+      }
+      return services[index] && services[index].price;
+    }
+    var importPrice = priceOf("Importation", 0);
+    var sourcingPrice = priceOf("Sourcing", 1);
+    var inspectionPrice = priceOf("Inspection", 2);
     return Number(prices.importPerKg) === 25 &&
       Number(prices.inspectionUsd) === 100 &&
       (!importPrice || importPrice === "25 USD / kg") &&
@@ -52,49 +169,79 @@
       (!inspectionPrice || inspectionPrice === "100 USD");
   }
 
+  function servicesFrom(base, saved) {
+    var savedList = saved && Array.isArray(saved.services) ? saved.services : null;
+    var source = savedList && savedList.length ? savedList : base.services;
+    var legacy = !savedList || !savedList.length || savedList.every(function (item) {
+      return !item || !knownForm(item.form);
+    });
+    var services = source.map(function (item, index) {
+      return normalizeService(item, index, base.services);
+    }).filter(function (item) { return item && item.name && item.form; });
+    if (legacy) {
+      var present = {};
+      services.forEach(function (item) { present[item.form] = true; });
+      base.services.forEach(function (item, index) {
+        var form = formFromItem(item, index, false);
+        if (present[form]) return;
+        services.push(normalizeService(item, index, base.services));
+        present[form] = true;
+      });
+    }
+    if (!services.length) {
+      services = base.services.map(function (item, index) {
+        return normalizeService(item, index, base.services);
+      });
+    }
+    return services;
+  }
+
+  function themeFrom(base, saved) {
+    var baseTheme = base.theme || fallback.theme;
+    var savedTheme = saved && saved.theme && typeof saved.theme === "object" ? saved.theme : {};
+    var corners = savedTheme.buttonCorners;
+    if (corners !== "rounded" && corners !== "square") corners = baseTheme.buttonCorners === "rounded" ? "rounded" : "square";
+    return {
+      background: colorOr(savedTheme.background, baseTheme.background || "#070707"),
+      text: colorOr(savedTheme.text, baseTheme.text || "#f6efd9"),
+      accent: colorOr(savedTheme.accent, baseTheme.accent || "#d4af37"),
+      buttonBackground: colorOr(savedTheme.buttonBackground, baseTheme.buttonBackground || "#0b0b0b"),
+      buttonText: colorOr(savedTheme.buttonText, baseTheme.buttonText || "#d4af37"),
+      buttonCorners: corners,
+      shimmer: typeof savedTheme.shimmer === "boolean" ? savedTheme.shimmer : baseTheme.shimmer !== false,
+      logo: logoOr(savedTheme.logo),
+    };
+  }
+
   function merge(base, saved) {
-    if (oldOfficialPrices(saved)) {
-      saved = Object.assign({}, saved, {
+    var source = saved;
+    if (oldOfficialPrices(source)) {
+      source = Object.assign({}, source, {
         prices: {},
-        services: (saved.services || []).map(function (item) {
+        services: (source.services || []).map(function (item) {
           var copy = Object.assign({}, item);
-          delete copy.price;
+          if (copy.price === "25 USD / kg" || copy.price === "Free" || copy.price === "100 USD") delete copy.price;
           return copy;
         }),
       });
     }
     var basePrices = base.prices || fallback.prices;
-    var savedPrices = saved && saved.prices ? saved.prices : {};
-    var services = base.services.map(function (item, index) {
-      var over = saved && saved.services && saved.services[index] ? saved.services[index] : {};
-      var name = textOr(over.name, item.name);
-      if (name === "Door to door service" || name === "Import Now" || name === "Source Now") name = item.name;
-      return {
-        name: name,
-        note: textOr(over.note, item.note),
-        line: textOr(over.line, item.line),
-        price: textOr(over.price, item.price),
-        action: (function () {
-          var action = textOr(over.action, item.action);
-          if (action === "Import Now" || action === "Source Now") return item.action || "";
-          return action;
-        })(),
-      };
-    });
+    var savedPrices = source && source.prices ? source.prices : {};
     return {
-      slogan: textOr(saved && saved.slogan, base.slogan),
+      slogan: textOr(source && source.slogan, base.slogan),
       welcome: (function () {
-        var welcome = textOr(saved && saved.welcome, base.welcome);
+        var welcome = textOr(source && source.welcome, base.welcome);
         if (welcome === "KABAMAN brings what you want to your door.") return base.welcome;
         return welcome;
       })(),
-      line: textOr(saved && saved.line, base.line),
+      line: textOr(source && source.line, base.line),
       prices: {
         importPerKg: numberOr(savedPrices.importPerKg, basePrices.importPerKg),
         importMaxKg: numberOr(savedPrices.importMaxKg, basePrices.importMaxKg),
         inspectionUsd: numberOr(savedPrices.inspectionUsd, basePrices.inspectionUsd),
       },
-      services: services,
+      theme: themeFrom(base, source),
+      services: servicesFrom(base, source),
     };
   }
 
@@ -103,8 +250,81 @@
     return item.name;
   }
 
+  function renderChoices(site) {
+    var grid = document.getElementById("service-choices");
+    if (!grid) return -1;
+    var pressed = grid.querySelector('[aria-pressed="true"]');
+    var pressedIndex = pressed ? Number(pressed.getAttribute("data-pick-service")) : -1;
+    grid.replaceChildren();
+    site.services.forEach(function (item, index) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "choice-btn";
+      button.setAttribute("data-pick-service", String(index));
+      button.setAttribute("data-form", item.form);
+      var label = item.name;
+      if (item.line) label += ". " + item.line;
+      if (item.price) label += ". " + item.price;
+      button.setAttribute("aria-label", label);
+      button.setAttribute("aria-pressed", index === pressedIndex ? "true" : "false");
+      var mark = document.createElement("span");
+      mark.className = "choice-mark";
+      mark.setAttribute("aria-hidden", "true");
+      var title = document.createElement("span");
+      title.className = "choice-title";
+      title.textContent = item.name;
+      var line = document.createElement("span");
+      line.className = "choice-line";
+      line.textContent = item.line || "";
+      var price = document.createElement("span");
+      price.className = "choice-price";
+      price.textContent = item.price || "";
+      button.append(mark, title, line, price);
+      grid.appendChild(button);
+    });
+    if (pressedIndex >= site.services.length) pressedIndex = -1;
+    return pressedIndex;
+  }
+
+  function applyLogo(theme) {
+    var src = theme.logo || "assets/logo.jpg?v=circle";
+    document.querySelectorAll(".logo-full, .brand-mark img").forEach(function (img) {
+      if (img.getAttribute("src") !== src) img.setAttribute("src", src);
+    });
+    var icon = document.querySelector('link[rel="icon"]');
+    if (icon) icon.href = src;
+  }
+
+  function applyTheme(site) {
+    if (!document.body || !document.body.classList.contains("customer")) return;
+    var theme = site.theme || fallback.theme;
+    var root = document.documentElement;
+    var background = theme.background;
+    var accent = theme.accent;
+    var buttonBackground = theme.buttonBackground;
+    var classicPage = background === "#070707" && accent === "#d4af37";
+    var classicButton = buttonBackground === "#0b0b0b";
+    root.style.setProperty("--page-bg", background);
+    root.style.setProperty("--page-glow", classicPage ? "#2a220c" : mix(background, accent, 0.22));
+    root.style.setProperty("--text", theme.text);
+    root.style.setProperty("--cream", theme.text);
+    root.style.setProperty("--gold", accent);
+    root.style.setProperty("--gold-soft", accent === "#d4af37" ? "#f0d78c" : mix(accent, "#ffffff", 0.62));
+    root.style.setProperty("--line", hexToRgba(accent, 0.35));
+    root.style.setProperty("--black", background);
+    root.style.setProperty("--btn-bg", buttonBackground);
+    root.style.setProperty("--btn-bg-top", classicButton ? "#1a160c" : mix(buttonBackground, accent, 0.18));
+    root.style.setProperty("--btn-bg-selected", classicButton ? "#14110a" : mix(buttonBackground, "#000000", 0.2));
+    root.style.setProperty("--btn-bg-selected-top", classicButton ? "#3a2e10" : mix(buttonBackground, accent, 0.4));
+    root.style.setProperty("--btn-text", theme.buttonText);
+    root.style.setProperty("--btn-radius", theme.buttonCorners === "rounded" ? "20px" : "0px");
+    root.classList.toggle("no-shimmer", theme.shimmer === false);
+    applyLogo(theme);
+  }
+
   function apply(site) {
     current = site;
+    applyTheme(site);
     var slogan = document.getElementById("brand-slogan");
     var welcome = document.getElementById("brand-welcome");
     var line = document.getElementById("brand-line");
@@ -113,6 +333,7 @@
     if (footerSlogan) footerSlogan.textContent = site.slogan;
     if (welcome) welcome.textContent = site.welcome;
     if (line) line.textContent = site.line;
+    var pressedIndex = renderChoices(site);
     site.services.forEach(function (item, index) {
       var nameEl = document.getElementById("service-name-" + index);
       var noteEl = document.getElementById("service-note-" + index);
@@ -120,49 +341,27 @@
       if (nameEl) nameEl.textContent = item.name;
       if (noteEl) noteEl.textContent = item.note || "";
       if (actionEl) actionEl.textContent = item.action || "";
-      var button = document.querySelector('[data-pick-service="' + index + '"]');
-      if (button) {
-        var title = button.querySelector(".choice-title");
-        var choiceLine = button.querySelector(".choice-line");
-        var choicePrice = button.querySelector(".choice-price");
-        var image = button.querySelector("img");
-        if (title) title.textContent = item.name;
-        else if (image) image.alt = item.name;
-        else button.textContent = item.name;
-        if (choiceLine) choiceLine.textContent = item.line || "";
-        if (choicePrice) choicePrice.textContent = item.price || "";
-        var label = item.name;
-        if (item.line) label += ". " + item.line;
-        if (item.price) label += ". " + item.price;
-        button.setAttribute("aria-label", label);
-      }
     });
     var select = document.getElementById("order-service");
     if (select) {
-      var previous = select.value;
       select.replaceChildren();
       site.services.forEach(function (item, index) {
         var option = document.createElement("option");
-        option.value = item.name;
+        option.value = String(index);
         option.textContent = choiceLabel(item);
-        if (index === 0 || item.name === previous) option.selected = true;
+        option.setAttribute("data-form", item.form);
         select.appendChild(option);
       });
-      if (![].some.call(select.options, function (option) { return option.selected; }) && select.options[0]) {
-        select.options[0].selected = true;
-      }
+      if (pressedIndex >= 0 && select.options[pressedIndex]) select.selectedIndex = pressedIndex;
+      else if (select.options[0]) select.selectedIndex = 0;
     }
     var help = document.getElementById("service-help");
     var maxKg = site.prices && site.prices.importMaxKg ? site.prices.importMaxKg : 100;
-    if (help && site.services[0]) help.textContent = site.services[0].name + " is up to " + maxKg + " kg.";
-    var pressed = document.querySelector('[data-pick-service][aria-pressed="true"]');
+    var importation = site.services.filter(function (item) { return item.form === "importation"; })[0];
+    if (help && importation) help.textContent = importation.name + " is up to " + maxKg + " kg.";
     var title = document.getElementById("service-detail-title");
-    if (pressed && title && select) {
-      var picked = Number(pressed.getAttribute("data-pick-service"));
-      if (select.options[picked]) {
-        select.selectedIndex = picked;
-        title.textContent = select.options[picked].textContent;
-      }
+    if (pressedIndex >= 0 && title && select && select.options[pressedIndex]) {
+      title.textContent = select.options[pressedIndex].textContent;
     }
   }
 
@@ -184,7 +383,17 @@
   }
 
   function save(next) {
-    localStorage.setItem(KEY, JSON.stringify(merge(defaults, next)));
+    var merged = merge(defaults, next);
+    try {
+      localStorage.setItem(KEY, JSON.stringify(merged));
+    } catch (err) {
+      if (merged.theme) merged = Object.assign({}, merged, { theme: Object.assign({}, merged.theme, { logo: "" }) });
+      try {
+        localStorage.setItem(KEY, JSON.stringify(merged));
+      } catch (err2) {
+        return null;
+      }
+    }
     finish(merge(defaults, readSaved()));
     return current;
   }
@@ -207,5 +416,6 @@
     reset: reset,
   };
 
+  apply(current);
   load();
 })();

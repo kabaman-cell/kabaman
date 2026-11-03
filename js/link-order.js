@@ -11,21 +11,38 @@
   const serviceInput = document.getElementById("order-service");
   const payService = document.getElementById("pay-service");
   const payAction = document.getElementById("pay-action");
+  function normalizeForm(value, name) {
+    const key = String(value || "").trim().toLowerCase();
+    if (key === "import" || key === "importation") return "importation";
+    if (key === "sourcing" || key === "inspection" || key === "products" || key === "auction") return key;
+    const byName = {
+      importation: "importation",
+      sourcing: "sourcing",
+      inspection: "inspection",
+      products: "products",
+      auction: "auction",
+    };
+    return byName[String(name || "").trim().toLowerCase()] || "importation";
+  }
   function serviceList() {
     const site = window.KABAMAN_SITE && window.KABAMAN_SITE.get();
     const items = site && site.services && site.services.length ? site.services : [
-      { name: "Importation", action: "" },
-      { name: "Sourcing", action: "" },
-      { name: "Inspection", action: "" },
-      { name: "Products", action: "" },
-      { name: "Auction", action: "" },
+      { name: "Sourcing", price: "19,99 USD", action: "", form: "sourcing" },
+      { name: "Importation", price: "24,99 USD / kg", action: "", form: "importation" },
+      { name: "Inspection", price: "99,99 USD", action: "", form: "inspection" },
+      { name: "Products", price: "On request", action: "", form: "products" },
+      { name: "Auction", price: "Place a bid", action: "", form: "auction" },
     ];
-    const ids = ["importation", "sourcing", "inspection", "products", "auction"];
-    return items.map((item, index) => ({
-      name: item.name,
-      action: item.action || item.name,
-      id: ids[index] || "service-" + index,
-    }));
+    return items.map((item) => {
+      const form = normalizeForm(item.form, item.name);
+      return {
+        name: item.name,
+        action: item.action || item.name,
+        form,
+        id: form,
+        price: item.price || "",
+      };
+    });
   }
   const moqInput = document.getElementById("moq");
   const moqMinus = document.getElementById("moq-minus");
@@ -48,58 +65,71 @@
   const confirmation = document.getElementById("link-confirmation");
   let idFile = { name: "", attached: false, dataUrl: "", pending: false };
   let idReady = Promise.resolve();
-  let activeServiceIndex = null;
-
-  function sourcingMode() {
-    return activeServiceIndex === 1;
-  }
-
-  function inspectionMode() {
-    return activeServiceIndex === 2;
-  }
-
-  function productsMode() {
-    return activeServiceIndex === 3;
-  }
-
-  function auctionMode() {
-    return activeServiceIndex === 4;
-  }
+  let activeForm = "";
 
   function formMode() {
-    if (sourcingMode()) return "sourcing";
-    if (inspectionMode()) return "inspection";
-    if (productsMode()) return "products";
-    if (auctionMode()) return "auction";
+    if (activeForm === "sourcing") return "sourcing";
+    if (activeForm === "inspection") return "inspection";
+    if (activeForm === "products") return "products";
+    if (activeForm === "auction") return "auction";
     return "import";
   }
 
-  function isSourcingOrder(order) {
-    if (!order) return false;
+  function sourcingMode() {
+    return formMode() === "sourcing";
+  }
+
+  function inspectionMode() {
+    return formMode() === "inspection";
+  }
+
+  function productsMode() {
+    return formMode() === "products";
+  }
+
+  function auctionMode() {
+    return formMode() === "auction";
+  }
+
+  function orderForm(order) {
+    if (!order) return "";
     const serviceId = order.services && order.services[0] && order.services[0].id;
-    const serviceName = (order.goods && order.goods.service) || (order.services[0] && order.services[0].name);
-    return serviceId === "sourcing" || serviceName === "Sourcing" || order.status === "Waiting for sourcing price";
+    const byId = {
+      sourcing: "sourcing",
+      inspection: "inspection",
+      products: "products",
+      auction: "auction",
+      importation: "importation",
+      import: "importation",
+    };
+    if (byId[serviceId]) return byId[serviceId];
+    const serviceName = (order.goods && order.goods.service) || (order.services && order.services[0] && order.services[0].name) || "";
+    const byName = {
+      Sourcing: "sourcing",
+      Inspection: "inspection",
+      Products: "products",
+      Auction: "auction",
+      Importation: "importation",
+    };
+    if (byName[serviceName]) return byName[serviceName];
+    if (order.status === "Waiting for sourcing price") return "sourcing";
+    return "importation";
+  }
+
+  function isSourcingOrder(order) {
+    return orderForm(order) === "sourcing";
   }
 
   function isInspectionOrder(order) {
-    if (!order) return false;
-    const serviceId = order.services && order.services[0] && order.services[0].id;
-    const serviceName = (order.goods && order.goods.service) || (order.services[0] && order.services[0].name);
-    return serviceId === "inspection" || serviceName === "Inspection";
+    return orderForm(order) === "inspection";
   }
 
   function isProductsOrder(order) {
-    if (!order) return false;
-    const serviceId = order.services && order.services[0] && order.services[0].id;
-    const serviceName = (order.goods && order.goods.service) || (order.services[0] && order.services[0].name);
-    return serviceId === "products" || serviceName === "Products";
+    return orderForm(order) === "products";
   }
 
   function isAuctionOrder(order) {
-    if (!order) return false;
-    const serviceId = order.services && order.services[0] && order.services[0].id;
-    const serviceName = (order.goods && order.goods.service) || (order.services[0] && order.services[0].name);
-    return serviceId === "auction" || serviceName === "Auction";
+    return orderForm(order) === "auction";
   }
 
   function applyFormMode() {
@@ -129,15 +159,15 @@
     const perKg = Number(prices.importPerKg);
     const maxKg = Number(prices.importMaxKg);
     const inspection = Number(prices.inspectionUsd);
-    const services = site && site.services ? site.services : [];
+    const record = chosenRecord();
+    const line = record && record.price;
     return {
       perKg: Number.isFinite(perKg) && perKg > 0 ? perKg : 24.99,
       maxKg: Number.isFinite(maxKg) && maxKg > 0 ? maxKg : 100,
       inspection: Number.isFinite(inspection) && inspection > 0 ? inspection : 99.99,
-      sourcingPrice: (services[1] && services[1].price) || "19,99 USD",
-      inspectionLabel: (services[2] && services[2].price) || "",
-      productsPrice: (services[3] && services[3].price) || "On request",
-      auctionPrice: (services[4] && services[4].price) || "Place a bid",
+      sourcingPrice: record && record.form === "sourcing" && line ? line : "19,99 USD",
+      productsPrice: record && record.form === "products" && line ? line : "On request",
+      auctionPrice: record && record.form === "auction" && line ? line : "Place a bid",
     };
   }
 
@@ -253,8 +283,9 @@
 
   function chosenRecord() {
     const list = serviceList();
-    const value = serviceInput && serviceInput.value;
-    return list.find((item) => item.name === value) || list[0];
+    const index = serviceInput ? serviceInput.selectedIndex : -1;
+    if (index >= 0 && list[index]) return list[index];
+    return list[0] || { name: "Importation", action: "Importation", form: "importation", id: "importation", price: "" };
   }
 
   function chosenService() {
@@ -276,18 +307,17 @@
   }
 
   function openService(index) {
-    if (!serviceInput || !serviceInput.options[index]) return;
-    activeServiceIndex = index;
+    const list = serviceList();
+    const record = list[index];
+    if (!serviceInput || !record || !serviceInput.options[index]) return;
+    activeForm = record.form;
     serviceInput.selectedIndex = index;
     serviceInput.dispatchEvent(new Event("change", { bubbles: true }));
     const title = document.getElementById("service-detail-title");
     if (title) title.textContent = serviceInput.options[index].textContent;
     applyFormMode();
     const latest = latestOrder();
-    const keepResult = (index === 1 && isSourcingOrder(latest))
-      || (index === 2 && isInspectionOrder(latest))
-      || (index === 3 && isProductsOrder(latest))
-      || (index === 4 && isAuctionOrder(latest));
+    const keepResult = record.form !== "importation" && !!latest && orderForm(latest) === record.form;
     form.hidden = keepResult;
     confirmation.hidden = !keepResult;
     document.querySelectorAll("[data-pick-service]").forEach((button) => {
@@ -301,9 +331,14 @@
     refreshOrder();
   }
 
-  document.querySelectorAll("[data-pick-service]").forEach((button) => {
-    button.addEventListener("click", () => openService(Number(button.getAttribute("data-pick-service"))));
-  });
+  const choiceGrid = document.getElementById("service-choices");
+  if (choiceGrid) {
+    choiceGrid.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-pick-service]");
+      if (!button || !choiceGrid.contains(button)) return;
+      openService(Number(button.getAttribute("data-pick-service")));
+    });
+  }
 
   function readFile(file) {
     return new Promise((resolve, reject) => {

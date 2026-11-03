@@ -6,6 +6,15 @@
   --cream: #f6efd9;
   --muted: #c8c0a8;
   --line: rgba(212, 175, 55, 0.35);
+  --page-bg: #070707;
+  --page-glow: #2a220c;
+  --text: #f6efd9;
+  --btn-bg: #0b0b0b;
+  --btn-bg-top: #1a160c;
+  --btn-bg-selected: #14110a;
+  --btn-bg-selected-top: #3a2e10;
+  --btn-text: #d4af37;
+  --btn-radius: 0px;
 }
 
 * { box-sizing: border-box; }
@@ -13,8 +22,8 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   font-family: Outfit, Inter, system-ui, sans-serif;
-  background: radial-gradient(1200px 600px at 80% -10%, #2a220c 0%, var(--black) 45%);
-  color: var(--cream);
+  background: radial-gradient(1200px 600px at 80% -10%, var(--page-glow) 0%, var(--page-bg) 45%);
+  color: var(--text);
   line-height: 1.6;
 }
 
@@ -38,7 +47,7 @@ h1, h2, h3, .brand strong, .eyebrow {
   align-items: center;
   justify-content: center;
   padding: 0 28px;
-  background: rgba(7, 7, 7, 0.94);
+  background: color-mix(in srgb, var(--page-bg) 94%, transparent);
   border-bottom: 1px solid var(--line);
   backdrop-filter: blur(12px);
 }
@@ -151,13 +160,14 @@ h1 { font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.15; margin: 0 0 16px;
   padding: 32px 26px 28px;
   text-align: left;
   cursor: pointer;
-  color: var(--cream);
+  color: var(--btn-text);
   background: transparent;
   border: 1px solid transparent;
+  border-radius: var(--btn-radius);
   box-shadow:
-    0 0 0 1px rgba(212, 175, 55, 0.08),
+    0 0 0 1px color-mix(in srgb, var(--gold) 8%, transparent),
     0 18px 40px rgba(0, 0, 0, 0.38),
-    0 0 28px rgba(212, 175, 55, 0.14);
+    0 0 28px color-mix(in srgb, var(--gold) 14%, transparent);
   transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 .choice-btn::before {
@@ -170,12 +180,12 @@ h1 { font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.15; margin: 0 0 16px;
   aspect-ratio: 1;
   background: conic-gradient(
     from 0deg,
-    rgba(212, 175, 55, 0.12) 0deg,
-    rgba(212, 175, 55, 0.2) 70deg,
-    #f0d78c 128deg,
-    #d4af37 168deg,
-    rgba(212, 175, 55, 0.18) 230deg,
-    rgba(212, 175, 55, 0.12) 360deg
+    color-mix(in srgb, var(--gold) 12%, transparent) 0deg,
+    color-mix(in srgb, var(--gold) 20%, transparent) 70deg,
+    var(--gold-soft) 128deg,
+    var(--gold) 168deg,
+    color-mix(in srgb, var(--gold) 18%, transparent) 230deg,
+    color-mix(in srgb, var(--gold) 12%, transparent) 360deg
   );
   transform: translate(-50%, -50%);
   animation: choice-shimmer 9s linear infinite;
@@ -185,9 +195,10 @@ h1 { font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.15; margin: 0 0 16px;
   position: absolute;
   inset: 1px;
   z-index: -1;
+  border-radius: inherit;
   background:
-    radial-gradient(120% 90% at 100% 0%, rgba(212, 175, 55, 0.18), transparent 52%),
-    linear-gradient(165deg, #1a160c 0%, #0b0b0b 62%);
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 52%),
+    linear-gradient(165deg, var(--btn-bg-top) 0%, var(--btn-bg) 62%);
   pointer-events: none;
 }
 @keyframes choice-shimmer {
@@ -205,7 +216,7 @@ h1 { font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.15; margin: 0 0 16px;
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1.15;
-  color: var(--gold);
+  color: var(--btn-text);
 }
 .choice-line {
   font-family: Outfit, system-ui, sans-serif;
@@ -214,33 +225,34 @@ h1 { font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.15; margin: 0 0 16px;
   line-height: 1.45;
   color: var(--muted);
 }
+.choice-line:empty,
+.choice-price:empty { display: none; }
 .choice-price,
 .service-fee {
   font-family: Cinzel, Georgia, serif;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: var(--gold);
 }
-.choice-price { font-size: 1.05rem; line-height: 1.3; }
-.service-fee { margin: 0 0 14px; font-size: 1.2rem; }
+.choice-price { font-size: 1.05rem; line-height: 1.3; color: var(--btn-text); }
+.service-fee { margin: 0 0 14px; font-size: 1.2rem; color: var(--gold); }
 .choice-btn:hover,
 .choice-btn:focus-visible {
   transform: translateY(-4px);
   box-shadow:
     0 0 0 1px var(--gold-soft),
     0 22px 48px rgba(0, 0, 0, 0.48),
-    0 0 36px rgba(240, 215, 140, 0.48);
+    0 0 36px color-mix(in srgb, var(--gold-soft) 48%, transparent);
   outline: none;
 }
 .choice-btn:hover::before,
 .choice-btn:focus-visible::before {
   background: conic-gradient(
     from 0deg,
-    rgba(240, 215, 140, 0.35) 0deg,
-    #f0d78c 120deg,
+    color-mix(in srgb, var(--gold-soft) 35%, transparent) 0deg,
+    var(--gold-soft) 120deg,
     #fff4cc 160deg,
-    #d4af37 210deg,
-    rgba(212, 175, 55, 0.35) 360deg
+    var(--gold) 210deg,
+    color-mix(in srgb, var(--gold) 35%, transparent) 360deg
   );
 }
 .choice-btn:focus-visible {
@@ -252,16 +264,16 @@ h1 { font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.15; margin: 0 0 16px;
   box-shadow:
     0 0 0 2px var(--gold),
     0 18px 44px rgba(0, 0, 0, 0.45),
-    0 0 42px rgba(212, 175, 55, 0.55);
+    0 0 42px color-mix(in srgb, var(--gold) 55%, transparent);
 }
 .choice-btn[aria-pressed="true"]::before {
   animation: none;
-  background: #d4af37;
+  background: var(--gold);
 }
 .choice-btn[aria-pressed="true"]::after {
   background:
-    radial-gradient(120% 100% at 50% 0%, rgba(212, 175, 55, 0.32), transparent 58%),
-    linear-gradient(165deg, #3a2e10 0%, #14110a 70%);
+    radial-gradient(120% 100% at 50% 0%, color-mix(in srgb, var(--gold) 32%, transparent), transparent 58%),
+    linear-gradient(165deg, var(--btn-bg-selected-top) 0%, var(--btn-bg-selected) 70%);
 }
 .choice-btn[aria-pressed="true"]:hover,
 .choice-btn[aria-pressed="true"]:focus-visible {
@@ -276,10 +288,24 @@ h1 { font-size: clamp(2rem, 4.4vw, 3.6rem); line-height: 1.15; margin: 0 0 16px;
     animation: none;
     transition: none;
   }
-  .choice-btn::before { background: rgba(212, 175, 55, 0.75); }
+  .choice-btn::before { background: color-mix(in srgb, var(--gold) 75%, transparent); }
   .choice-btn:hover,
   .choice-btn:focus-visible,
   .choice-btn[aria-pressed="true"]:hover { transform: none; }
+}
+html.no-shimmer .choice-btn::before,
+html.no-shimmer .choice-btn:hover::before,
+html.no-shimmer .choice-btn:focus-visible::before,
+html.no-shimmer .choice-btn[aria-pressed="true"]::before {
+  animation: none;
+  inset: 0;
+  left: 0;
+  top: 0;
+  width: auto;
+  height: auto;
+  aspect-ratio: auto;
+  transform: none;
+  background: var(--gold);
 }
 .poster-lead { margin: 0 0 12px; color: var(--gold-soft); }
 .info-list {
@@ -952,6 +978,33 @@ input:focus, textarea:focus, select:focus { outline: 2px solid var(--gold); }
 .admin-order .btn { margin-top: 12px; margin-right: 8px; }
 .admin-service { border: 1px solid var(--line); margin: 16px 0; padding: 8px 14px 14px; }
 .admin-service legend { color: var(--gold); font-family: Cinzel, serif; padding: 0 6px; }
+.admin-colors { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 4px 16px; }
+.admin-block select {
+  width: 100%;
+  margin-top: 6px;
+  min-height: 48px;
+  background: #0c0c0c;
+  color: var(--cream);
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  font: inherit;
+}
+.admin-block label.admin-check { display: flex; align-items: center; gap: 10px; }
+.admin-block input[type="checkbox"] { width: 22px; min-height: 22px; margin: 0; flex: none; }
+.admin-block input[type="color"] { padding: 6px; cursor: pointer; }
+.logo-preview {
+  display: block;
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  margin: 8px 0;
+  background: #070707;
+  border: 1px solid var(--line);
+}
+.admin-service-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.admin-add { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 12px 0; }
+.admin-add label { flex: 1 1 220px; margin-top: 0; }
+.btn-quiet:disabled { opacity: 0.4; cursor: not-allowed; }
 .admin-id {
   display: block;
   width: min(100%, 240px);

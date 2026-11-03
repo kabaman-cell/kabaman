@@ -45,74 +45,66 @@
         <input id="edit-line" type="text" maxlength="80" required />
       </label>
       <fieldset class="admin-service">
-        <legend>Importation</legend>
-        <label for="edit-service-0">Name
-          <input id="edit-service-0" type="text" maxlength="60" required />
+        <legend>Landing page look</legend>
+        <div class="admin-colors">
+          <label for="edit-bg">Page background
+            <input id="edit-bg" type="color" value="#070707" />
+          </label>
+          <label for="edit-text">Text color
+            <input id="edit-text" type="color" value="#f6efd9" />
+          </label>
+          <label for="edit-accent">Gold accent
+            <input id="edit-accent" type="color" value="#d4af37" />
+          </label>
+          <label for="edit-btn-bg">Button background
+            <input id="edit-btn-bg" type="color" value="#0b0b0b" />
+          </label>
+          <label for="edit-btn-text">Button text
+            <input id="edit-btn-text" type="color" value="#d4af37" />
+          </label>
+        </div>
+        <label for="edit-corners">Button corners
+          <select id="edit-corners">
+            <option value="square" selected>Square</option>
+            <option value="rounded">Rounded</option>
+          </select>
         </label>
-        <label for="edit-line-0">Subtitle
-          <input id="edit-line-0" type="text" maxlength="80" />
+        <label class="admin-check">
+          <input id="edit-shimmer" type="checkbox" checked />
+          Gold shimmer animation
         </label>
-        <label for="edit-price-0">Price line
-          <input id="edit-price-0" type="text" maxlength="40" />
+        <label for="edit-logo">Logo image
+          <input id="edit-logo" type="file" accept="image/*" />
         </label>
-        <label for="edit-import-rate">USD per kg
+        <img id="logo-preview" class="logo-preview" alt="Current logo" src="assets/logo.jpg?v=circle" />
+        <button class="btn btn-gold" id="logo-clear" type="button">Use the KABAMAN logo</button>
+      </fieldset>
+      <fieldset class="admin-service">
+        <legend>Prices the forms use</legend>
+        <label for="edit-import-rate">Importation USD per kg
           <input id="edit-import-rate" type="number" min="0.01" step="0.01" required />
         </label>
-        <label for="edit-import-max">Maximum kg
+        <label for="edit-import-max">Importation maximum kg
           <input id="edit-import-max" type="number" min="1" step="1" required />
         </label>
-      </fieldset>
-      <fieldset class="admin-service">
-        <legend>Sourcing</legend>
-        <label for="edit-service-1">Name
-          <input id="edit-service-1" type="text" maxlength="60" required />
-        </label>
-        <label for="edit-line-1">Subtitle
-          <input id="edit-line-1" type="text" maxlength="80" />
-        </label>
-        <label for="edit-price-1">Price line
-          <input id="edit-price-1" type="text" maxlength="40" />
-        </label>
-      </fieldset>
-      <fieldset class="admin-service">
-        <legend>Inspection</legend>
-        <label for="edit-service-2">Name
-          <input id="edit-service-2" type="text" maxlength="60" required />
-        </label>
-        <label for="edit-line-2">Subtitle
-          <input id="edit-line-2" type="text" maxlength="80" />
-        </label>
-        <label for="edit-price-2">Price line
-          <input id="edit-price-2" type="text" maxlength="40" />
-        </label>
-        <label for="edit-inspection-usd">Price in USD
+        <label for="edit-inspection-usd">Inspection USD
           <input id="edit-inspection-usd" type="number" min="0.01" step="0.01" required />
         </label>
       </fieldset>
-      <fieldset class="admin-service">
-        <legend>Products</legend>
-        <label for="edit-service-3">Name
-          <input id="edit-service-3" type="text" maxlength="60" required />
+      <div id="service-editors"></div>
+      <div class="admin-add">
+        <label for="new-service-form">Form for the new button
+          <select id="new-service-form">
+            <option value="sourcing">Sourcing</option>
+            <option value="importation">Importation</option>
+            <option value="inspection">Inspection</option>
+            <option value="products">Products</option>
+            <option value="auction">Auction</option>
+          </select>
         </label>
-        <label for="edit-line-3">Subtitle
-          <input id="edit-line-3" type="text" maxlength="80" />
-        </label>
-        <label for="edit-price-3">Price line
-          <input id="edit-price-3" type="text" maxlength="40" />
-        </label>
-      </fieldset>
-      <fieldset class="admin-service">
-        <legend>Auction</legend>
-        <label for="edit-service-4">Name
-          <input id="edit-service-4" type="text" maxlength="60" required />
-        </label>
-        <label for="edit-line-4">Subtitle
-          <input id="edit-line-4" type="text" maxlength="80" />
-        </label>
-        <label for="edit-price-4">Price line
-          <input id="edit-price-4" type="text" maxlength="40" />
-        </label>
-      </fieldset>
+        <button class="btn btn-gold" id="add-service" type="button">Add button</button>
+      </div>
+      <p class="admin-note">The customer page lists these buttons in this order. The last button cannot be removed. Orders already placed stay as they are.</p>
       <div class="admin-actions">
         <button class="btn btn-gold" type="submit">Save</button>
         <button class="btn btn-gold" id="site-reset" type="button">Reset</button>

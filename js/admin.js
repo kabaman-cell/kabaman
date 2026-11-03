@@ -5,31 +5,22 @@
   var sloganInput = document.getElementById("edit-slogan");
   var welcomeInput = document.getElementById("edit-welcome");
   var lineInput = document.getElementById("edit-line");
-  var nameInputs = [
-    document.getElementById("edit-service-0"),
-    document.getElementById("edit-service-1"),
-    document.getElementById("edit-service-2"),
-    document.getElementById("edit-service-3"),
-    document.getElementById("edit-service-4"),
-  ];
-  var lineInputs = [
-    document.getElementById("edit-line-0"),
-    document.getElementById("edit-line-1"),
-    document.getElementById("edit-line-2"),
-    document.getElementById("edit-line-3"),
-    document.getElementById("edit-line-4"),
-  ];
-  var priceInputs = [
-    document.getElementById("edit-price-0"),
-    document.getElementById("edit-price-1"),
-    document.getElementById("edit-price-2"),
-    document.getElementById("edit-price-3"),
-    document.getElementById("edit-price-4"),
-  ];
   var importRate = document.getElementById("edit-import-rate");
   var importMax = document.getElementById("edit-import-max");
   var inspectionUsd = document.getElementById("edit-inspection-usd");
+  var backgroundInput = document.getElementById("edit-bg");
+  var textInput = document.getElementById("edit-text");
+  var accentInput = document.getElementById("edit-accent");
+  var buttonBgInput = document.getElementById("edit-btn-bg");
+  var buttonTextInput = document.getElementById("edit-btn-text");
+  var cornersInput = document.getElementById("edit-corners");
+  var shimmerInput = document.getElementById("edit-shimmer");
+  var logoInput = document.getElementById("edit-logo");
+  var logoPreview = document.getElementById("logo-preview");
   var siteNote = document.getElementById("site-note");
+  var draft = [];
+  var logoValue = "";
+  var FORM_TYPES = ["sourcing", "importation", "inspection", "products", "auction"];
   var list = document.getElementById("order-list");
   var filters = document.getElementById("order-filters");
   var openRef = "";
@@ -39,29 +30,253 @@
     "Not verified": "status-not-verified",
   };
 
+  function showLogo() {
+    if (!logoPreview) return;
+    logoPreview.src = logoValue || "assets/logo.jpg?v=circle";
+  }
+
+  function readFile(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || "")); };
+      reader.onerror = function () { reject(reader.error); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function compressLogo(file) {
+    return readFile(file).then(function (dataUrl) {
+      return new Promise(function (resolve) {
+        var img = new Image();
+        img.onload = function () {
+          var max = 640;
+          var width = img.width || max;
+          var height = img.height || max;
+          var scale = Math.min(1, max / Math.max(width, height));
+          width = Math.max(1, Math.round(width * scale));
+          height = Math.max(1, Math.round(height * scale));
+          var canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          var ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          var png = canvas.toDataURL("image/png");
+          if (png.indexOf("data:image/") === 0 && png.length <= 280000) {
+            resolve(png);
+            return;
+          }
+          ctx.fillStyle = "#070707";
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          var quality = 0.82;
+          var out = canvas.toDataURL("image/jpeg", quality);
+          while (out.length > 280000 && quality > 0.45) {
+            quality -= 0.1;
+            out = canvas.toDataURL("image/jpeg", quality);
+          }
+          resolve(out.indexOf("data:image/") === 0 ? out : "");
+        };
+        img.onerror = function () { resolve(""); };
+        img.src = dataUrl;
+      });
+    }).catch(function () { return ""; });
+  }
+
+  function moneyLine(value, suffix) {
+    var amount = Number(value);
+    if (!Number.isFinite(amount)) return "";
+    return amount.toFixed(2).replace(".", ",") + suffix;
+  }
+
+  function preset(form) {
+    var rate = moneyLine(importRate.value, " USD / kg") || "24,99 USD / kg";
+    var inspection = moneyLine(inspectionUsd.value, " USD") || "99,99 USD";
+    var map = {
+      sourcing: { name: "Sourcing", line: "Trouvez les meilleurs fournisseurs", price: "19,99 USD" },
+      importation: { name: "Importation", line: "Service clé en main", price: rate },
+      inspection: { name: "Inspection", line: "Inspection des échantillons", price: inspection },
+      products: { name: "Products", line: "Available goods", price: "On request" },
+      auction: { name: "Auction", line: "Unfinished imports and unsold goods", price: "Place a bid" },
+    };
+    var item = map[form] || map.sourcing;
+    return { name: item.name, note: "", line: item.line, price: item.price, action: "", form: form };
+  }
+
+  function knownForm(value) {
+    return FORM_TYPES.indexOf(value) >= 0 ? value : "sourcing";
+  }
+
+  function readDraft() {
+    var cards = document.querySelectorAll("#service-editors [data-service-index]");
+    if (!cards.length) return;
+    var next = [];
+    cards.forEach(function (card, index) {
+      var prev = draft[index] || {};
+      var name = card.querySelector(".edit-name").value.trim();
+      next.push({
+        name: name || prev.name || "Service",
+        note: prev.note || "",
+        line: card.querySelector(".edit-line").value.trim(),
+        price: card.querySelector(".edit-price").value.trim(),
+        action: prev.action || "",
+        form: knownForm(card.querySelector(".edit-form").value),
+      });
+    });
+    draft = next;
+  }
+
+  function labeledInput(labelText, className, value, max, required) {
+    var label = document.createElement("label");
+    label.appendChild(document.createTextNode(labelText));
+    var input = document.createElement("input");
+    input.type = "text";
+    input.className = className;
+    input.maxLength = max;
+    input.value = value || "";
+    input.required = !!required;
+    label.appendChild(input);
+    return label;
+  }
+
+  function toolButton(text, disabled, onClick) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = text === "Remove" ? "btn-quiet danger" : "btn-quiet";
+    button.textContent = text;
+    button.disabled = !!disabled;
+    button.addEventListener("click", onClick);
+    return button;
+  }
+
+  function renderEditors() {
+    var host = document.getElementById("service-editors");
+    if (!host) return;
+    host.replaceChildren();
+    draft.forEach(function (item, index) {
+      var box = document.createElement("fieldset");
+      box.className = "admin-service";
+      box.setAttribute("data-service-index", String(index));
+      var legend = document.createElement("legend");
+      legend.textContent = (item.name || "Button") + " — " + item.form;
+      box.appendChild(legend);
+      var nameField = labeledInput("Name", "edit-name", item.name, 60, true);
+      nameField.querySelector("input").addEventListener("input", function (event) {
+        legend.textContent = (event.target.value.trim() || "Button") + " — " + (box.querySelector(".edit-form").value || item.form);
+      });
+      box.appendChild(nameField);
+      box.appendChild(labeledInput("Subtitle", "edit-line", item.line, 80, false));
+      box.appendChild(labeledInput("Price line", "edit-price", item.price, 80, false));
+      var formLabel = document.createElement("label");
+      formLabel.appendChild(document.createTextNode("Form"));
+      var select = document.createElement("select");
+      select.className = "edit-form";
+      [
+        ["sourcing", "Sourcing"],
+        ["importation", "Importation"],
+        ["inspection", "Inspection"],
+        ["products", "Products"],
+        ["auction", "Auction"],
+      ].forEach(function (pair) {
+        var option = document.createElement("option");
+        option.value = pair[0];
+        option.textContent = pair[1];
+        if (pair[0] === item.form) option.selected = true;
+        select.appendChild(option);
+      });
+      select.addEventListener("change", function () {
+        readDraft();
+        renderEditors();
+      });
+      formLabel.appendChild(select);
+      box.appendChild(formLabel);
+      var tools = document.createElement("div");
+      tools.className = "admin-service-tools";
+      tools.appendChild(toolButton("Move up", index === 0, function () {
+        readDraft();
+        if (index === 0) return;
+        var swap = draft[index - 1];
+        draft[index - 1] = draft[index];
+        draft[index] = swap;
+        renderEditors();
+      }));
+      tools.appendChild(toolButton("Move down", index === draft.length - 1, function () {
+        readDraft();
+        if (index === draft.length - 1) return;
+        var swap = draft[index + 1];
+        draft[index + 1] = draft[index];
+        draft[index] = swap;
+        renderEditors();
+      }));
+      tools.appendChild(toolButton("Remove", draft.length <= 1, function () {
+        readDraft();
+        if (draft.length <= 1) return;
+        draft.splice(index, 1);
+        renderEditors();
+      }));
+      box.appendChild(tools);
+      host.appendChild(box);
+    });
+  }
+
+  function paintLinkedPrices(formName, text) {
+    if (!text) return;
+    document.querySelectorAll("#service-editors [data-service-index]").forEach(function (card) {
+      if (card.querySelector(".edit-form").value !== formName) return;
+      var price = card.querySelector(".edit-price");
+      if (price) price.value = text;
+    });
+  }
+
   function fillForm(site) {
     var prices = site.prices || {};
+    var theme = site.theme || {};
     sloganInput.value = site.slogan;
     welcomeInput.value = site.welcome;
     lineInput.value = site.line || "";
     importRate.value = prices.importPerKg || 24.99;
     importMax.value = prices.importMaxKg || 100;
     inspectionUsd.value = prices.inspectionUsd || 99.99;
-    site.services.forEach(function (item, index) {
-      if (nameInputs[index]) nameInputs[index].value = item.name;
-      if (lineInputs[index]) lineInputs[index].value = item.line || "";
-      if (priceInputs[index]) priceInputs[index].value = item.price || "";
+    backgroundInput.value = theme.background || "#070707";
+    textInput.value = theme.text || "#f6efd9";
+    accentInput.value = theme.accent || "#d4af37";
+    buttonBgInput.value = theme.buttonBackground || "#0b0b0b";
+    buttonTextInput.value = theme.buttonText || "#d4af37";
+    cornersInput.value = theme.buttonCorners === "rounded" ? "rounded" : "square";
+    shimmerInput.checked = theme.shimmer !== false;
+    logoValue = theme.logo || "";
+    if (logoInput) logoInput.value = "";
+    showLogo();
+    draft = (site.services || []).map(function (item) {
+      return {
+        name: item.name,
+        note: item.note || "",
+        line: item.line || "",
+        price: item.price || "",
+        action: item.action || "",
+        form: knownForm(item.form),
+      };
     });
+    renderEditors();
   }
 
   function serviceKind(order) {
     var goods = (order && order.goods) || {};
     var serviceId = order && order.services && order.services[0] && order.services[0].id;
     var serviceName = goods.service || (order && order.services && order.services[0] && order.services[0].name) || "";
-    if (serviceId === "inspection" || serviceName === "Inspection") return "inspection";
-    if (serviceId === "products" || serviceName === "Products") return "products";
-    if (serviceId === "auction" || serviceName === "Auction") return "auction";
-    if (serviceId === "sourcing" || serviceName === "Sourcing") return "sourcing";
+    var byId = {
+      inspection: "inspection",
+      products: "products",
+      auction: "auction",
+      sourcing: "sourcing",
+      importation: "import",
+      import: "import",
+    };
+    if (byId[serviceId]) return byId[serviceId];
+    if (serviceName === "Inspection") return "inspection";
+    if (serviceName === "Products") return "products";
+    if (serviceName === "Auction") return "auction";
+    if (serviceName === "Sourcing") return "sourcing";
     return "import";
   }
 
@@ -383,23 +598,51 @@
     paintOrders();
   });
 
-  function moneyLine(value, suffix) {
-    var amount = Number(value);
-    if (!Number.isFinite(amount)) return "";
-    return amount.toFixed(2).replace(".", ",") + suffix;
-  }
-
   importRate.addEventListener("input", function () {
-    if (importRate.value) priceInputs[0].value = moneyLine(importRate.value, " USD / kg");
+    if (importRate.value) paintLinkedPrices("importation", moneyLine(importRate.value, " USD / kg"));
   });
   inspectionUsd.addEventListener("input", function () {
-    if (inspectionUsd.value) priceInputs[2].value = moneyLine(inspectionUsd.value, " USD");
+    if (inspectionUsd.value) paintLinkedPrices("inspection", moneyLine(inspectionUsd.value, " USD"));
+  });
+
+  if (logoInput) {
+    logoInput.addEventListener("change", function () {
+      var file = logoInput.files && logoInput.files[0];
+      if (!file) return;
+      compressLogo(file).then(function (dataUrl) {
+        if (!dataUrl) {
+          siteNote.textContent = "That image could not be read. Try a different file.";
+          return;
+        }
+        logoValue = dataUrl;
+        showLogo();
+        siteNote.textContent = "Logo ready. Save to use it on the customer page.";
+      });
+    });
+  }
+
+  document.getElementById("logo-clear").addEventListener("click", function () {
+    logoValue = "";
+    if (logoInput) logoInput.value = "";
+    showLogo();
+  });
+
+  document.getElementById("add-service").addEventListener("click", function () {
+    readDraft();
+    var formType = knownForm(document.getElementById("new-service-form").value);
+    draft.push(preset(formType));
+    renderEditors();
+    siteNote.textContent = "Button added. Save to show it on the customer page.";
   });
 
   form.addEventListener("submit", function (event) {
     event.preventDefault();
-    var site = window.KABAMAN_SITE.get();
-    window.KABAMAN_SITE.save({
+    readDraft();
+    if (draft.length < 1) {
+      siteNote.textContent = "Keep at least one button.";
+      return;
+    }
+    var saved = window.KABAMAN_SITE.save({
       slogan: sloganInput.value.trim(),
       welcome: welcomeInput.value.trim(),
       line: lineInput.value.trim(),
@@ -408,19 +651,37 @@
         importMaxKg: Number(importMax.value),
         inspectionUsd: Number(inspectionUsd.value),
       },
-      services: site.services.map(function (item, index) {
-        var nameField = nameInputs[index];
-        var lineField = lineInputs[index];
-        var priceField = priceInputs[index];
+      theme: {
+        background: backgroundInput.value,
+        text: textInput.value,
+        accent: accentInput.value,
+        buttonBackground: buttonBgInput.value,
+        buttonText: buttonTextInput.value,
+        buttonCorners: cornersInput.value === "rounded" ? "rounded" : "square",
+        shimmer: shimmerInput.checked,
+        logo: logoValue,
+      },
+      services: draft.map(function (item) {
         return {
-          name: nameField ? nameField.value.trim() || item.name : item.name,
+          name: item.name,
           note: item.note,
-          line: lineField ? lineField.value.trim() : item.line,
-          price: priceField ? priceField.value.trim() : item.price,
+          line: item.line,
+          price: item.price,
           action: item.action,
+          form: item.form,
         };
       }),
     });
+    if (!saved) {
+      siteNote.textContent = "This browser blocked saving. Try a smaller logo.";
+      return;
+    }
+    var wantedLogo = logoValue;
+    fillForm(saved);
+    if (wantedLogo && !(saved.theme && saved.theme.logo)) {
+      siteNote.textContent = "Saved, but the logo was too large to store. Other changes were kept.";
+      return;
+    }
     siteNote.textContent = "Saved on this browser. Reload the customer page to see it.";
   });
 

@@ -7,11 +7,21 @@
     "importMaxKg": 100,
     "inspectionUsd": 99.99
   },
+  "theme": {
+    "background": "#070707",
+    "text": "#f6efd9",
+    "accent": "#d4af37",
+    "buttonBackground": "#0b0b0b",
+    "buttonText": "#d4af37",
+    "buttonCorners": "square",
+    "shimmer": true,
+    "logo": ""
+  },
   "services": [
-    { "name": "Importation", "note": "Up to 100 kg", "line": "Service clé en main", "price": "24,99 USD / kg", "action": "" },
-    { "name": "Sourcing", "note": "", "line": "Trouvez les meilleurs fournisseurs", "price": "19,99 USD", "action": "" },
-    { "name": "Inspection", "note": "", "line": "Inspection des échantillons", "price": "99,99 USD", "action": "" },
-    { "name": "Products", "note": "", "line": "Available goods", "price": "On request", "action": "" },
-    { "name": "Auction", "note": "", "line": "Unfinished imports and unsold goods", "price": "Place a bid", "action": "" }
+    { "name": "Sourcing", "note": "", "line": "Trouvez les meilleurs fournisseurs", "price": "19,99 USD", "action": "", "form": "sourcing" },
+    { "name": "Importation", "note": "Up to 100 kg", "line": "Service clé en main", "price": "24,99 USD / kg", "action": "", "form": "importation" },
+    { "name": "Inspection", "note": "", "line": "Inspection des échantillons", "price": "99,99 USD", "action": "", "form": "inspection" },
+    { "name": "Products", "note": "", "line": "Available goods", "price": "On request", "action": "", "form": "products" },
+    { "name": "Auction", "note": "", "line": "Unfinished imports and unsold goods", "price": "Place a bid", "action": "", "form": "auction" }
   ]
 }
