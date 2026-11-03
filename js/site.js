@@ -9,6 +9,8 @@
       { name: "Importation", note: "Up to 100 kg", line: "Service clé en main", price: "24,99 USD / kg", action: "" },
       { name: "Sourcing", note: "", line: "Trouvez les meilleurs fournisseurs", price: "19,99 USD", action: "" },
       { name: "Inspection", note: "", line: "Inspection des échantillons", price: "99,99 USD", action: "" },
+      { name: "Products", note: "", line: "Available goods", price: "On request", action: "" },
+      { name: "Auction", note: "", line: "Unfinished imports and unsold goods", price: "Place a bid", action: "" },
     ],
   };
   var defaults = fallback;

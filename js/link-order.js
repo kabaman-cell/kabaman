@@ -17,8 +17,10 @@
       { name: "Importation", action: "" },
       { name: "Sourcing", action: "" },
       { name: "Inspection", action: "" },
+      { name: "Products", action: "" },
+      { name: "Auction", action: "" },
     ];
-    const ids = ["importation", "sourcing", "inspection"];
+    const ids = ["importation", "sourcing", "inspection", "products", "auction"];
     return items.map((item, index) => ({
       name: item.name,
       action: item.action || item.name,
@@ -56,9 +58,19 @@
     return activeServiceIndex === 2;
   }
 
+  function productsMode() {
+    return activeServiceIndex === 3;
+  }
+
+  function auctionMode() {
+    return activeServiceIndex === 4;
+  }
+
   function formMode() {
     if (sourcingMode()) return "sourcing";
     if (inspectionMode()) return "inspection";
+    if (productsMode()) return "products";
+    if (auctionMode()) return "auction";
     return "import";
   }
 
@@ -76,6 +88,20 @@
     return serviceId === "inspection" || serviceName === "Inspection";
   }
 
+  function isProductsOrder(order) {
+    if (!order) return false;
+    const serviceId = order.services && order.services[0] && order.services[0].id;
+    const serviceName = (order.goods && order.goods.service) || (order.services[0] && order.services[0].name);
+    return serviceId === "products" || serviceName === "Products";
+  }
+
+  function isAuctionOrder(order) {
+    if (!order) return false;
+    const serviceId = order.services && order.services[0] && order.services[0].id;
+    const serviceName = (order.goods && order.goods.service) || (order.services[0] && order.services[0].name);
+    return serviceId === "auction" || serviceName === "Auction";
+  }
+
   function applyFormMode() {
     const mode = formMode();
     document.querySelectorAll("[data-mode]").forEach((el) => {
@@ -91,8 +117,8 @@
     if (idLegend) idLegend.textContent = "ID";
     form.querySelectorAll("[aria-invalid='true']").forEach((el) => markInvalid(el, false));
     showError("");
-    if (mode === "inspection") preview.hidden = true;
-    else showPreview(currentLink());
+    if (mode === "import" || mode === "sourcing") showPreview(currentLink());
+    else preview.hidden = true;
     if (mode !== "import") showLaterSteps(false);
     paintPrices();
   }
@@ -110,6 +136,8 @@
       inspection: Number.isFinite(inspection) && inspection > 0 ? inspection : 99.99,
       sourcingPrice: (services[1] && services[1].price) || "19,99 USD",
       inspectionLabel: (services[2] && services[2].price) || "",
+      productsPrice: (services[3] && services[3].price) || "On request",
+      auctionPrice: (services[4] && services[4].price) || "Place a bid",
     };
   }
 
@@ -134,7 +162,11 @@
     const rates = siteSettings();
     const inspectionPrice = formatUsd(rates.inspection);
     const importLine = formatUsd(rates.perKg).replace(" USD", "") + " USD / kg";
-    const text = mode === "sourcing" ? rates.sourcingPrice : mode === "inspection" ? inspectionPrice : importLine;
+    const text = mode === "sourcing" ? rates.sourcingPrice
+      : mode === "inspection" ? inspectionPrice
+      : mode === "products" ? rates.productsPrice
+      : mode === "auction" ? rates.auctionPrice
+      : importLine;
     if (fee) fee.textContent = text;
   }
 
@@ -252,7 +284,10 @@
     if (title) title.textContent = serviceInput.options[index].textContent;
     applyFormMode();
     const latest = latestOrder();
-    const keepResult = (index === 1 && isSourcingOrder(latest)) || (index === 2 && isInspectionOrder(latest));
+    const keepResult = (index === 1 && isSourcingOrder(latest))
+      || (index === 2 && isInspectionOrder(latest))
+      || (index === 3 && isProductsOrder(latest))
+      || (index === 4 && isAuctionOrder(latest));
     form.hidden = keepResult;
     confirmation.hidden = !keepResult;
     document.querySelectorAll("[data-pick-service]").forEach((button) => {
@@ -357,6 +392,14 @@
     }
     if (inspectionMode()) {
       submitInspection();
+      return;
+    }
+    if (productsMode()) {
+      submitProducts();
+      return;
+    }
+    if (auctionMode()) {
+      submitAuction();
       return;
     }
     const parsed = currentLink();
@@ -601,9 +644,12 @@
       markInvalid(item[0], item[1]);
       if (item[1] && !firstBad) firstBad = item;
     });
+    if (!idFile.attached && !firstBad) {
+      firstBad = [idFileInput, true, "Add an ID document or scan it with your camera."];
+    }
     if (firstBad) {
       showError(firstBad[2], firstBad[0]);
-      firstBad[0].focus();
+      if (firstBad[0] !== idFileInput) firstBad[0].focus();
       return;
     }
     const service = chosenService();
@@ -621,11 +667,11 @@
         checklist: checklist,
         servicePrice: formatUsd(siteSettings().inspection),
       },
-      contact: {
+      contact: idContact({
         supplierCountry: country,
         supplierAddress: supplierAddress,
         supplierPhone: supplierPhone,
-      },
+      }),
       status: "Not verified",
       reviewWindow: "24 hours",
     });
@@ -654,7 +700,7 @@
     document.getElementById("confirm-wait").textContent = "Your inspection request is placed. Nothing has been charged.";
     const lede = document.getElementById("confirm-lede");
     if (lede) lede.hidden = true;
-    document.getElementById("confirm-id").textContent = "";
+    document.getElementById("confirm-id").textContent = "ID received for review: " + (saved.contact.idFileName || "");
     document.getElementById("confirm-label").textContent = "";
     const confirmUrl = document.getElementById("confirm-url");
     confirmUrl.textContent = "";
@@ -665,6 +711,158 @@
     document.title = saved.ref + " | KABAMAN";
     refreshOrder();
     confirmation.focus();
+  }
+
+  function showPlaced(order, title, wait, pairs) {
+    document.getElementById("link-ref").textContent = order.ref;
+    const facts = document.getElementById("confirm-facts");
+    facts.replaceChildren();
+    pairs.forEach((pair) => {
+      const dt = document.createElement("dt");
+      dt.textContent = pair[0];
+      const dd = document.createElement("dd");
+      dd.textContent = pair[1];
+      facts.append(dt, dd);
+    });
+    document.getElementById("link-confirm-title").textContent = title;
+    document.getElementById("confirm-wait").textContent = wait;
+    const lede = document.getElementById("confirm-lede");
+    if (lede) lede.hidden = true;
+    document.getElementById("confirm-id").textContent = "ID received for review: " + ((order.contact && order.contact.idFileName) || "");
+    document.getElementById("confirm-label").textContent = "";
+    const confirmUrl = document.getElementById("confirm-url");
+    confirmUrl.textContent = "";
+    confirmUrl.removeAttribute("href");
+    form.hidden = true;
+    confirmation.hidden = false;
+    showLaterSteps(false);
+    document.title = order.ref + " | KABAMAN";
+    refreshOrder();
+    confirmation.focus();
+  }
+
+  function firstInvalid(checks) {
+    let firstBad = null;
+    checks.forEach((item) => {
+      if (!item[0]) return;
+      markInvalid(item[0], item[1]);
+      if (item[1] && !firstBad) firstBad = item;
+    });
+    if (!idFile.attached && !firstBad) {
+      firstBad = [idFileInput, true, "Add an ID document or scan it with your camera."];
+    }
+    if (firstBad) {
+      showError(firstBad[2], firstBad[0]);
+      if (firstBad[0] !== idFileInput) firstBad[0].focus();
+      return true;
+    }
+    return false;
+  }
+
+  function submitProducts() {
+    const productNameInput = document.getElementById("product-name");
+    const productQtyInput = document.getElementById("product-quantity");
+    const productName = productNameInput.value.trim();
+    const qtyRaw = productQtyInput.value.trim();
+    const quantity = /^\d+$/.test(qtyRaw) ? Number(qtyRaw) : 0;
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const wilaya = wilayaInput.value;
+    const address = addressInput.value.trim();
+    productNameInput.value = productName;
+    nameInput.value = name;
+    phoneInput.value = phone;
+    addressInput.value = address;
+    if (firstInvalid([
+      [productNameInput, !productName, "Add the product name."],
+      [productQtyInput, !Number.isInteger(quantity) || quantity < 1, "Enter a whole number of at least 1."],
+      [nameInput, !name, "Add your name."],
+      [phoneInput, !phone, "Add a phone number."],
+      [wilayaInput, !wilaya, "Select a wilaya."],
+      [addressInput, !address, "Add the address."],
+    ])) return;
+    const service = chosenService();
+    const action = chosenAction();
+    const saved = window.KABAMAN.saveOrder({
+      ref: window.KABAMAN.nextRef(),
+      placedAt: new Date().toISOString(),
+      services: [{ id: chosenRecord().id, name: service, action: action, qty: 1 }],
+      goods: {
+        service: service,
+        action: action,
+        productName: productName,
+        quantity: quantity,
+        wilaya: wilaya,
+        address: address,
+        servicePrice: siteSettings().productsPrice,
+      },
+      contact: idContact({
+        name: name,
+        phone: phone,
+        wilaya: wilaya,
+        address: address,
+      }),
+      status: "Not verified",
+    });
+    if (!saved) {
+      showError("This browser blocked saving the order. Allow site data for this page and try again.");
+      return;
+    }
+    showPlaced(saved, "Your products order is placed", "Your products order is placed. Nothing has been charged.", [
+      ["Service", service],
+      ["Product name", productName],
+      ["Quantity", String(quantity)],
+      ["Name", name],
+      ["Phone number", phone],
+      ["Wilaya", wilaya],
+      ["Address", address],
+      ["Price", saved.goods.servicePrice || "On request"],
+    ]);
+  }
+
+  function submitAuction() {
+    const descriptionInput = document.getElementById("auction-description");
+    const bidInput = document.getElementById("auction-bid");
+    const description = descriptionInput.value.trim();
+    const bid = Number(String(bidInput.value).trim().replace(",", "."));
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    descriptionInput.value = description;
+    nameInput.value = name;
+    phoneInput.value = phone;
+    if (firstInvalid([
+      [descriptionInput, !description, "Describe the goods."],
+      [bidInput, !Number.isFinite(bid) || bid <= 0, "Enter a bid greater than 0."],
+      [nameInput, !name, "Add your name."],
+      [phoneInput, !phone, "Add a phone number."],
+    ])) return;
+    const service = chosenService();
+    const action = chosenAction();
+    const saved = window.KABAMAN.saveOrder({
+      ref: window.KABAMAN.nextRef(),
+      placedAt: new Date().toISOString(),
+      services: [{ id: chosenRecord().id, name: service, action: action, qty: 1 }],
+      goods: {
+        service: service,
+        action: action,
+        description: description,
+        bid: bid,
+        servicePrice: formatUsd(bid),
+      },
+      contact: idContact({ name: name, phone: phone }),
+      status: "Not verified",
+    });
+    if (!saved) {
+      showError("This browser blocked saving the order. Allow site data for this page and try again.");
+      return;
+    }
+    showPlaced(saved, "Your bid is placed", "Your bid is placed. Nothing has been charged.", [
+      ["Service", service],
+      ["Description of the goods", description],
+      ["Bid amount in USD", formatUsd(bid)],
+      ["Name", name],
+      ["Phone number", phone],
+    ]);
   }
 
   function latestOrder() {
@@ -740,7 +938,10 @@
     paintStatus(document.getElementById("confirm-status"), order);
     document.getElementById("live-wait").textContent = customerWait(order);
     const fileName = order.contact && order.contact.idFileName;
-    document.getElementById("live-id").textContent = fileName ? "ID received for review: " + fileName : "";
+    const idLine = fileName ? "ID received for review: " + fileName : "";
+    document.getElementById("live-id").textContent = idLine;
+    const confirmId = document.getElementById("confirm-id");
+    if (confirmId) confirmId.textContent = idLine;
     const reply = order.reply ? order.reply : "";
     document.getElementById("live-reply").textContent = reply;
     const confirmReply = document.getElementById("confirm-reply");
@@ -755,7 +956,9 @@
     const matches = order && (
       (mode === "sourcing" && isSourcingOrder(order)) ||
       (mode === "inspection" && isInspectionOrder(order)) ||
-      (mode === "import" && !isSourcingOrder(order) && !isInspectionOrder(order))
+      (mode === "products" && isProductsOrder(order)) ||
+      (mode === "auction" && isAuctionOrder(order)) ||
+      (mode === "import" && !isSourcingOrder(order) && !isInspectionOrder(order) && !isProductsOrder(order) && !isAuctionOrder(order))
     );
     if (!matches) {
       if (panel) panel.hidden = true;
@@ -774,12 +977,14 @@
       if (lede) lede.hidden = true;
       return;
     }
-    if (isInspectionOrder(order)) {
+    if (isInspectionOrder(order) || isProductsOrder(order) || isAuctionOrder(order)) {
       if (panel) panel.hidden = false;
       paintLive(order);
       showLaterSteps(false);
       setStep2Locked(true);
       setStep3Locked(true);
+      const placedLede = document.getElementById("confirm-lede");
+      if (placedLede && !isInspectionOrder(order)) placedLede.hidden = true;
       return;
     }
     const lede = document.getElementById("confirm-lede");

@@ -9,16 +9,22 @@
     document.getElementById("edit-service-0"),
     document.getElementById("edit-service-1"),
     document.getElementById("edit-service-2"),
+    document.getElementById("edit-service-3"),
+    document.getElementById("edit-service-4"),
   ];
   var lineInputs = [
     document.getElementById("edit-line-0"),
     document.getElementById("edit-line-1"),
     document.getElementById("edit-line-2"),
+    document.getElementById("edit-line-3"),
+    document.getElementById("edit-line-4"),
   ];
   var priceInputs = [
     document.getElementById("edit-price-0"),
     document.getElementById("edit-price-1"),
     document.getElementById("edit-price-2"),
+    document.getElementById("edit-price-3"),
+    document.getElementById("edit-price-4"),
   ];
   var importRate = document.getElementById("edit-import-rate");
   var importMax = document.getElementById("edit-import-max");
@@ -46,6 +52,17 @@
       if (lineInputs[index]) lineInputs[index].value = item.line || "";
       if (priceInputs[index]) priceInputs[index].value = item.price || "";
     });
+  }
+
+  function serviceKind(order) {
+    var goods = (order && order.goods) || {};
+    var serviceId = order && order.services && order.services[0] && order.services[0].id;
+    var serviceName = goods.service || (order && order.services && order.services[0] && order.services[0].name) || "";
+    if (serviceId === "inspection" || serviceName === "Inspection") return "inspection";
+    if (serviceId === "products" || serviceName === "Products") return "products";
+    if (serviceId === "auction" || serviceName === "Auction") return "auction";
+    if (serviceId === "sourcing" || serviceName === "Sourcing") return "sourcing";
+    return "import";
   }
 
   function field(label, value) {
@@ -193,6 +210,7 @@
     customer.appendChild(customerBox);
     tr.appendChild(customer);
 
+    var kind = serviceKind(order);
     var service = goods.service || (order.services[0] && order.services[0].name) || "";
     var serviceCell = document.createElement("td");
     serviceCell.textContent = service;
@@ -202,10 +220,10 @@
       price.textContent = goods.servicePrice;
       serviceCell.appendChild(price);
     }
-    if (goods.quantity >= 250) {
+    if ((kind === "products" && goods.quantity >= 1) || goods.quantity >= 250) {
       var pieces = document.createElement("div");
       pieces.className = "admin-muted";
-      pieces.textContent = goods.quantity + " pieces";
+      pieces.textContent = kind === "products" ? String(goods.quantity) : goods.quantity + " pieces";
       serviceCell.appendChild(pieces);
     } else if (goods.weight) {
       var kilos = document.createElement("div");
@@ -218,7 +236,11 @@
     var linkCell = document.createElement("td");
     var urls = window.KABAMAN.productUrls(order);
     if (!urls.length) {
-      linkCell.textContent = "—";
+      linkCell.textContent = kind === "products" && goods.productName
+        ? goods.productName
+        : kind === "auction" && goods.description
+          ? goods.description
+          : "—";
     } else {
       urls.forEach(function (item, index) {
         if (index) linkCell.appendChild(document.createElement("br"));
@@ -301,17 +323,20 @@
     tr.className = "admin-details";
     var td = document.createElement("td");
     td.colSpan = 6;
-    var inspection = (function () {
-      var serviceId = order.services && order.services[0] && order.services[0].id;
-      var serviceName = goods.service || (order.services[0] && order.services[0].name);
-      return serviceId === "inspection" || serviceName === "Inspection";
-    })();
+    var kind = serviceKind(order);
+    var inspection = kind === "inspection";
+    var products = kind === "products";
+    var auction = kind === "auction";
     var grid = document.createElement("div");
     grid.className = "admin-detail-grid";
     var pairs = [
+      ["Name", (products || auction) ? contact.name : ""],
       ["Phone number", contact.phone],
-      ["Product specification", goods.specification || goods.description],
-      ["Quantity", goods.quantity >= 250 ? goods.quantity + " pieces" : ""],
+      ["Product name", goods.productName],
+      ["Product specification", auction ? "" : (goods.specification || goods.description)],
+      ["Description of the goods", auction ? goods.description : ""],
+      ["Quantity", products && goods.quantity >= 1 ? String(goods.quantity) : (goods.quantity >= 250 ? goods.quantity + " pieces" : "")],
+      ["Bid", auction && Number(goods.bid) > 0 ? moneyLine(goods.bid, " USD") : ""],
       ["Wilaya", goods.wilaya || contact.wilaya],
       ["Country", inspection ? "" : (goods.country || contact.country)],
       ["Address", inspection ? "" : (goods.address || contact.address)],
@@ -384,11 +409,14 @@
         inspectionUsd: Number(inspectionUsd.value),
       },
       services: site.services.map(function (item, index) {
+        var nameField = nameInputs[index];
+        var lineField = lineInputs[index];
+        var priceField = priceInputs[index];
         return {
-          name: nameInputs[index].value.trim() || item.name,
+          name: nameField ? nameField.value.trim() || item.name : item.name,
           note: item.note,
-          line: lineInputs[index].value.trim(),
-          price: priceInputs[index].value.trim(),
+          line: lineField ? lineField.value.trim() : item.line,
+          price: priceField ? priceField.value.trim() : item.price,
           action: item.action,
         };
       }),

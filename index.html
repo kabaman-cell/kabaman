@@ -49,6 +49,18 @@
           <span class="choice-line">Inspection des échantillons</span>
           <span class="choice-price">99,99 USD</span>
         </button>
+        <button type="button" class="choice-btn" data-pick-service="3" aria-pressed="false" aria-label="Products. Available goods. On request">
+          <span class="choice-mark" aria-hidden="true"></span>
+          <span class="choice-title">Products</span>
+          <span class="choice-line">Available goods</span>
+          <span class="choice-price">On request</span>
+        </button>
+        <button type="button" class="choice-btn" data-pick-service="4" aria-pressed="false" aria-label="Auction. Unfinished imports and unsold goods. Place a bid">
+          <span class="choice-mark" aria-hidden="true"></span>
+          <span class="choice-title">Auction</span>
+          <span class="choice-line">Unfinished imports and unsold goods</span>
+          <span class="choice-price">Place a bid</span>
+        </button>
       </div>
     </section>
 
@@ -71,6 +83,8 @@
             <option value="Importation" selected>Importation</option>
             <option value="Sourcing">Sourcing</option>
             <option value="Inspection">Inspection</option>
+            <option value="Products">Products</option>
+            <option value="Auction">Auction</option>
           </select>
           <p class="search-hint" id="service-help" hidden></p>
           <label for="product-link" id="product-link-label" data-mode="import sourcing">Product link</label>
@@ -98,12 +112,25 @@
           <label for="link-description" data-mode="import">Product specification</label>
           <p class="search-hint" id="description-help" data-mode="import">Quantity details such as color and size.</p>
           <textarea id="link-description" data-mode="import" maxlength="800" rows="4" aria-describedby="description-help" placeholder="Color, size, and other product specifications"></textarea>
-          <label for="link-name" id="name-label" data-mode="import sourcing">Name</label>
-          <input id="link-name" data-mode="import sourcing" type="text" maxlength="100" autocomplete="name" />
-          <label for="link-phone" data-mode="import sourcing">Phone number</label>
-          <input id="link-phone" data-mode="import sourcing" type="tel" maxlength="40" autocomplete="tel" inputmode="tel" />
-          <label for="link-wilaya" data-mode="import">Wilaya</label>
-          <select id="link-wilaya" data-mode="import" autocomplete="address-level1">
+          <div class="mode-fields" data-mode="products" hidden>
+            <label for="product-name">Product name</label>
+            <input id="product-name" type="text" maxlength="120" />
+            <label for="product-quantity">Quantity</label>
+            <input id="product-quantity" type="number" inputmode="numeric" min="1" step="1" placeholder="1" />
+            <p class="search-hint">A whole number of at least 1.</p>
+          </div>
+          <div class="mode-fields" data-mode="auction" hidden>
+            <label for="auction-description">Description of the goods</label>
+            <textarea id="auction-description" maxlength="800" rows="4" placeholder="Unfinished import or unsold goods"></textarea>
+            <label for="auction-bid">Bid amount in USD</label>
+            <input id="auction-bid" type="number" inputmode="decimal" min="0.01" step="0.01" />
+          </div>
+          <label for="link-name" id="name-label" data-mode="import sourcing products auction">Name</label>
+          <input id="link-name" data-mode="import sourcing products auction" type="text" maxlength="100" autocomplete="name" />
+          <label for="link-phone" data-mode="import sourcing products auction">Phone number</label>
+          <input id="link-phone" data-mode="import sourcing products auction" type="tel" maxlength="40" autocomplete="tel" inputmode="tel" />
+          <label for="link-wilaya" data-mode="import products">Wilaya</label>
+          <select id="link-wilaya" data-mode="import products" autocomplete="address-level1">
             <option value="">Select a wilaya</option>
             <option value="01 — Adrar">01 — Adrar</option>
             <option value="02 — Chlef">02 — Chlef</option>
@@ -164,8 +191,8 @@
             <option value="57 — El M'Ghair">57 — El M'Ghair</option>
             <option value="58 — El Meniaa">58 — El Meniaa</option>
           </select>
-          <label for="link-address" data-mode="import">Address</label>
-          <textarea id="link-address" data-mode="import" maxlength="240" rows="3" autocomplete="street-address" placeholder="Street and city"></textarea>
+          <label for="link-address" data-mode="import products">Address</label>
+          <textarea id="link-address" data-mode="import products" maxlength="240" rows="3" autocomplete="street-address" placeholder="Street and city"></textarea>
           <div class="mode-fields" data-mode="inspection" hidden>
             <label for="supplier-country">Country of the customer's supplier</label>
             <input id="supplier-country" type="text" maxlength="80" autocomplete="country-name" />
@@ -176,7 +203,7 @@
             <label for="inspect-checklist">Checklist to inspect</label>
             <textarea id="inspect-checklist" maxlength="800" rows="4" placeholder="What should be inspected"></textarea>
           </div>
-          <fieldset class="id-upload" data-mode="import sourcing">
+          <fieldset class="id-upload" data-mode="import sourcing inspection products auction">
             <legend id="id-legend">ID</legend>
             <p class="search-hint">Add a photo or PDF so KABAMAN can review it. This does not verify identity.</p>
             <div class="id-actions">
