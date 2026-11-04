@@ -7,6 +7,7 @@
     inspection: "inspection",
     products: "products",
     auction: "auction",
+    auctions: "auction",
     "door to door service": "importation",
     "import now": "importation",
     "source now": "sourcing",
@@ -31,8 +32,7 @@
       { name: "Sourcing", note: "", line: "Trouvez les meilleurs fournisseurs", price: "19,99 USD", action: "", form: "sourcing" },
       { name: "Importation", note: "Up to 100 kg", line: "Service clé en main", price: "24,99 USD / kg", action: "", form: "importation" },
       { name: "Inspection", note: "", line: "Inspection des échantillons", price: "99,99 USD", action: "", form: "inspection" },
-      { name: "Products", note: "", line: "Available goods", price: "On request", action: "", form: "products" },
-      { name: "Auction", note: "", line: "Unfinished imports and unsold goods", price: "Place a bid", action: "", form: "auction" },
+      { name: "Auctions", note: "", line: "Unfinished imports and unsold goods", price: "Place a bid", action: "", form: "auction" },
     ],
   };
   var defaults = fallback;
@@ -169,8 +169,54 @@
       (!inspectionPrice || inspectionPrice === "100 USD");
   }
 
+  var PREVIOUS_OFFICIAL_FIVE = [
+    ["sourcing", "sourcing"],
+    ["importation", "importation"],
+    ["inspection", "inspection"],
+    ["products", "products"],
+    ["auction", "auction"],
+  ];
+
+  function isProductsService(item) {
+    var name = String(item && item.name || "").trim().toLowerCase();
+    var form = String(item && item.form || "").trim().toLowerCase();
+    if (name === "product") name = "products";
+    if (form === "product") form = "products";
+    return name === "products" || form === "products";
+  }
+
+  function dropProducts(list) {
+    return (list || []).filter(function (item) { return !isProductsService(item); });
+  }
+
+  function isPreviousOfficialFive(list) {
+    if (!list || list.length !== PREVIOUS_OFFICIAL_FIVE.length) return false;
+    for (var i = 0; i < PREVIOUS_OFFICIAL_FIVE.length; i += 1) {
+      var item = list[i];
+      var name = String(item && item.name || "").trim().toLowerCase();
+      var form = knownForm(item && item.form) || NAME_FORM[name] || "";
+      if (name !== PREVIOUS_OFFICIAL_FIVE[i][0] || form !== PREVIOUS_OFFICIAL_FIVE[i][1]) return false;
+    }
+    return true;
+  }
+
+  function landingQuad(services) {
+    var order = ["sourcing", "importation", "inspection", "auction"];
+    if (!services || services.length < order.length) return false;
+    for (var i = 0; i < order.length; i += 1) {
+      if (!services[i] || services[i].form !== order[i]) return false;
+    }
+    return true;
+  }
+
   function servicesFrom(base, saved) {
     var savedList = saved && Array.isArray(saved.services) ? saved.services : null;
+    if (savedList && isPreviousOfficialFive(savedList)) {
+      return base.services.map(function (item, index) {
+        return normalizeService(item, index, base.services);
+      });
+    }
+    if (savedList) savedList = dropProducts(savedList);
     var source = savedList && savedList.length ? savedList : base.services;
     var legacy = !savedList || !savedList.length || savedList.every(function (item) {
       return !item || !knownForm(item.form);
@@ -188,6 +234,7 @@
         present[form] = true;
       });
     }
+    services = dropProducts(services);
     if (!services.length) {
       services = base.services.map(function (item, index) {
         return normalizeService(item, index, base.services);
@@ -255,6 +302,7 @@
     if (!grid) return -1;
     var pressed = grid.querySelector('[aria-pressed="true"]');
     var pressedIndex = pressed ? Number(pressed.getAttribute("data-pick-service")) : -1;
+    grid.classList.toggle("landing-quad", landingQuad(site.services));
     grid.replaceChildren();
     site.services.forEach(function (item, index) {
       var button = document.createElement("button");
@@ -371,35 +419,71 @@
     waiters.splice(0).forEach(function (fn) { fn(current); });
   }
 
+  function migrateSavedSite(base) {
+    var saved = readSaved();
+    if (!saved || !Array.isArray(saved.services)) return saved;
+    var services = saved.services;
+    var changed = false;
+    if (isPreviousOfficialFive(services)) {
+      services = base.services.map(function (item) { return Object.assign({}, item); });
+      changed = true;
+    } else if (services.some(isProductsService)) {
+      services = dropProducts(services);
+      changed = true;
+    }
+    if (!changed) return saved;
+    var next = Object.assign({}, saved, { services: services });
+    try {
+      localStorage.setItem(KEY, JSON.stringify(next));
+    } catch (err) {
+      /* keep the in-memory list even if this browser refuses the write */
+    }
+    return next;
+  }
+
   function load() {
     return fetch("site.json")
       .then(function (response) { return response.ok ? response.json() : fallback; })
       .catch(function () { return fallback; })
       .then(function (data) {
         defaults = data && data.slogan ? data : fallback;
-        finish(merge(defaults, readSaved()));
-        return current;
+        var saved = migrateSavedSite(defaults);
+        var remote = window.KABAMAN_API ? window.KABAMAN_API.site() : Promise.resolve(null);
+        return remote.then(function (serverSite) {
+          finish(merge(defaults, serverSite || saved));
+          return current;
+        });
       });
+  }
+
+  function remember(site) {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(site));
+    } catch (err) {
+      if (site.theme) site = Object.assign({}, site, { theme: Object.assign({}, site.theme, { logo: "" }) });
+      try { localStorage.setItem(KEY, JSON.stringify(site)); } catch (err2) { /* the server copy can still be saved */ }
+    }
+    finish(site);
+    return current;
   }
 
   function save(next) {
     var merged = merge(defaults, next);
-    try {
-      localStorage.setItem(KEY, JSON.stringify(merged));
-    } catch (err) {
-      if (merged.theme) merged = Object.assign({}, merged, { theme: Object.assign({}, merged.theme, { logo: "" }) });
-      try {
-        localStorage.setItem(KEY, JSON.stringify(merged));
-      } catch (err2) {
-        return null;
-      }
+    if (window.KABAMAN_API && window.KABAMAN_API.usingServer()) {
+      return window.KABAMAN_API.saveSite(merged).then(function (remote) {
+        return remember(merge(defaults, remote || merged));
+      });
     }
-    finish(merge(defaults, readSaved()));
-    return current;
+    return remember(merged);
   }
 
   function reset() {
     localStorage.removeItem(KEY);
+    if (window.KABAMAN_API && window.KABAMAN_API.usingServer()) {
+      return window.KABAMAN_API.resetSite().then(function (remote) {
+        return remember(merge(defaults, remote));
+      });
+    }
     finish(merge(defaults, null));
     return current;
   }

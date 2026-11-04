@@ -23,8 +23,20 @@
 
   <main class="admin-page">
     <p class="eyebrow">Admin</p>
+    <section id="admin-login" class="admin-block" hidden>
+      <h1>Admin login</h1>
+      <p class="admin-note">Sign in to see orders and edit the site.</p>
+      <form id="admin-login-form" class="link-order">
+        <label for="admin-password">Password
+          <input id="admin-password" type="password" autocomplete="current-password" required />
+        </label>
+        <button class="btn btn-gold" type="submit">Log in</button>
+        <p id="admin-login-note" class="admin-note" role="status"></p>
+      </form>
+    </section>
+    <div id="admin-app" hidden>
     <h1>Orders</h1>
-    <p class="admin-note">Each order stays in this browser. Customer details, the ID picture, and the product link open on this page.</p>
+    <p class="admin-note" id="orders-note">Each order stays in this browser. Customer details, the ID picture, and the product link open on this page.</p>
 
     <section class="admin-block" id="orders">
       <div id="order-filters" class="order-filters"></div>
@@ -32,7 +44,7 @@
     </section>
 
     <h2>Customise the website</h2>
-    <p class="admin-note">Changes stay on this browser. Reload the customer page to see them.</p>
+    <p class="admin-note" id="site-storage-note">Changes stay on this browser. Reload the customer page to see them.</p>
 
     <form id="site-form" class="admin-block" novalidate>
       <label for="edit-slogan">Slogan
@@ -98,8 +110,7 @@
             <option value="sourcing">Sourcing</option>
             <option value="importation">Importation</option>
             <option value="inspection">Inspection</option>
-            <option value="products">Products</option>
-            <option value="auction">Auction</option>
+            <option value="auction">Auctions</option>
           </select>
         </label>
         <button class="btn btn-gold" id="add-service" type="button">Add button</button>
@@ -111,9 +122,11 @@
       </div>
       <p id="site-note" class="admin-note" role="status"></p>
     </form>
+    </div>
 
   </main>
 
+  <script src="js/api.js"></script>
   <script src="js/store.js"></script>
   <script src="js/site.js"></script>
   <script src="js/admin.js"></script>

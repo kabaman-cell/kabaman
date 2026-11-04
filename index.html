@@ -20,6 +20,7 @@
         <span class="brand-mark"><img src="assets/logo.jpg?v=circle" alt="KABAMAN" /></span>
         <strong>KABAMAN</strong>
       </a>
+      <a class="account-link" id="account-link" href="account.html">Account</a>
     </div>
   </header>
 
@@ -49,11 +50,10 @@
           <p id="service-fee" class="service-fee">24,99 USD / kg</p>
           <label for="order-service" hidden>Service</label>
           <select id="order-service" hidden>
-            <option value="Importation" selected>Importation</option>
             <option value="Sourcing">Sourcing</option>
+            <option value="Importation" selected>Importation</option>
             <option value="Inspection">Inspection</option>
-            <option value="Products">Products</option>
-            <option value="Auction">Auction</option>
+            <option value="Auctions">Auctions</option>
           </select>
           <p class="search-hint" id="service-help" hidden></p>
           <label for="product-link" id="product-link-label" data-mode="import sourcing">Product link</label>
@@ -206,6 +206,30 @@
         </section>
       </div>
     </section>
+    <section id="account-gate" class="account-board" hidden>
+      <h2>Account</h2>
+      <p class="search-hint">Create an account or log in before the order is saved.</p>
+      <form id="auth-form" class="link-order">
+        <label for="auth-email">Email
+          <input id="auth-email" type="email" autocomplete="username" required />
+        </label>
+        <label for="auth-password">Password
+          <input id="auth-password" type="password" autocomplete="current-password" minlength="8" required />
+        </label>
+        <div id="auth-register-fields" hidden>
+          <label for="auth-name">Name
+            <input id="auth-name" type="text" maxlength="100" autocomplete="name" />
+          </label>
+          <label for="auth-phone">Phone
+            <input id="auth-phone" type="tel" maxlength="40" autocomplete="tel" />
+          </label>
+        </div>
+        <p id="auth-note" class="form-note" role="alert"></p>
+        <button class="btn btn-gold" id="auth-submit" type="submit">Log in</button>
+        <button class="btn btn-gold" id="auth-switch" type="button">Create an account</button>
+        <button class="btn btn-gold" id="auth-cancel" type="button">Cancel</button>
+      </form>
+    </section>
   </main>
 
   <footer class="footer">
@@ -213,6 +237,7 @@
     <p><a href="admin.html">Admin</a></p>
   </footer>
 
+  <script src="js/api.js"></script>
   <script src="js/store.js"></script>
   <script src="js/site.js"></script>
   <script src="script.js"></script>

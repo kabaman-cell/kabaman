@@ -14,13 +14,16 @@
   function normalizeForm(value, name) {
     const key = String(value || "").trim().toLowerCase();
     if (key === "import" || key === "importation") return "importation";
-    if (key === "sourcing" || key === "inspection" || key === "products" || key === "auction") return key;
+    if (key === "sourcing" || key === "inspection" || key === "products" || key === "auction" || key === "auctions") {
+      return key === "auctions" ? "auction" : key;
+    }
     const byName = {
       importation: "importation",
       sourcing: "sourcing",
       inspection: "inspection",
       products: "products",
       auction: "auction",
+      auctions: "auction",
     };
     return byName[String(name || "").trim().toLowerCase()] || "importation";
   }
@@ -30,10 +33,9 @@
       { name: "Sourcing", price: "19,99 USD", action: "", form: "sourcing" },
       { name: "Importation", price: "24,99 USD / kg", action: "", form: "importation" },
       { name: "Inspection", price: "99,99 USD", action: "", form: "inspection" },
-      { name: "Products", price: "On request", action: "", form: "products" },
-      { name: "Auction", price: "Place a bid", action: "", form: "auction" },
+      { name: "Auctions", price: "Place a bid", action: "", form: "auction" },
     ];
-    return items.map((item) => {
+    return items.filter((item) => normalizeForm(item.form, item.name) !== "products").map((item) => {
       const form = normalizeForm(item.form, item.name);
       return {
         name: item.name,
@@ -109,6 +111,7 @@
       Inspection: "inspection",
       Products: "products",
       Auction: "auction",
+      Auctions: "auction",
       Importation: "importation",
     };
     if (byName[serviceName]) return byName[serviceName];
@@ -426,15 +429,15 @@
       try { await idReady; } catch (err) { /* keep the file name if the picture cannot be read */ }
     }
     if (inspectionMode()) {
-      submitInspection();
+      await submitInspection();
       return;
     }
     if (productsMode()) {
-      submitProducts();
+      await submitProducts();
       return;
     }
     if (auctionMode()) {
-      submitAuction();
+      await submitAuction();
       return;
     }
     const parsed = currentLink();
@@ -456,7 +459,7 @@
     showPreview(parsed);
 
     if (sourcingMode()) {
-      submitSourcing(parsed);
+      await submitSourcing(parsed);
       return;
     }
 
@@ -494,7 +497,7 @@
       return;
     }
 
-    const saved = window.KABAMAN.saveOrder({
+    const saved = await commitOrder({
       ref: window.KABAMAN.nextRef(),
       placedAt: new Date().toISOString(),
       services: [
@@ -575,7 +578,27 @@
     confirmation.focus();
   });
 
-  function submitSourcing(parsed) {
+  async function commitOrder(order) {
+    if (!(window.KABAMAN_API && await window.KABAMAN_API.available())) {
+      return window.KABAMAN.saveOrder(order);
+    }
+    const session = await window.KABAMAN_API.me();
+    if (!session || session.role !== "customer") {
+      const ok = await window.KABAMAN_API.ensureCustomer();
+      if (!ok) {
+        showError("Create an account or log in before the order is saved.");
+        return null;
+      }
+    }
+    try {
+      return await window.KABAMAN_API.createOrder(order);
+    } catch (err) {
+      showError(err.message || "The order could not be saved.");
+      return null;
+    }
+  }
+
+  async function submitSourcing(parsed) {
     const name = nameInput.value.trim();
     const phone = phoneInput.value.trim();
     nameInput.value = name;
@@ -600,7 +623,7 @@
     }
     const service = chosenService();
     const action = chosenAction();
-    const saved = window.KABAMAN.saveOrder({
+    const saved = await commitOrder({
       ref: window.KABAMAN.nextRef(),
       placedAt: new Date().toISOString(),
       services: [{ id: chosenRecord().id, name: service, action: action, qty: 1 }],
@@ -655,7 +678,7 @@
     confirmation.focus();
   }
 
-  function submitInspection() {
+  async function submitInspection() {
     const countryInput = document.getElementById("supplier-country");
     const supplierAddressInput = document.getElementById("supplier-address");
     const supplierPhoneInput = document.getElementById("supplier-phone");
@@ -689,7 +712,7 @@
     }
     const service = chosenService();
     const action = chosenAction();
-    const saved = window.KABAMAN.saveOrder({
+    const saved = await commitOrder({
       ref: window.KABAMAN.nextRef(),
       placedAt: new Date().toISOString(),
       services: [{ id: chosenRecord().id, name: service, action: action, qty: 1 }],
@@ -794,7 +817,7 @@
     return false;
   }
 
-  function submitProducts() {
+  async function submitProducts() {
     const productNameInput = document.getElementById("product-name");
     const productQtyInput = document.getElementById("product-quantity");
     const productName = productNameInput.value.trim();
@@ -818,7 +841,7 @@
     ])) return;
     const service = chosenService();
     const action = chosenAction();
-    const saved = window.KABAMAN.saveOrder({
+    const saved = await commitOrder({
       ref: window.KABAMAN.nextRef(),
       placedAt: new Date().toISOString(),
       services: [{ id: chosenRecord().id, name: service, action: action, qty: 1 }],
@@ -855,7 +878,7 @@
     ]);
   }
 
-  function submitAuction() {
+  async function submitAuction() {
     const descriptionInput = document.getElementById("auction-description");
     const bidInput = document.getElementById("auction-bid");
     const description = descriptionInput.value.trim();
@@ -873,7 +896,7 @@
     ])) return;
     const service = chosenService();
     const action = chosenAction();
-    const saved = window.KABAMAN.saveOrder({
+    const saved = await commitOrder({
       ref: window.KABAMAN.nextRef(),
       placedAt: new Date().toISOString(),
       services: [{ id: chosenRecord().id, name: service, action: action, qty: 1 }],
@@ -901,6 +924,10 @@
   }
 
   function latestOrder() {
+    if (window.KABAMAN_API && window.KABAMAN_API.usingServer()) {
+      const rows = window.KABAMAN_API.cachedOrders();
+      return rows.length ? rows[rows.length - 1] : null;
+    }
     const rows = window.KABAMAN.readOrders();
     return rows.length ? rows[rows.length - 1] : null;
   }
@@ -1054,4 +1081,5 @@
 
   if (window.KABAMAN_SITE) window.KABAMAN_SITE.whenReady(onSiteReady);
   else onSiteReady();
+  if (window.KABAMAN_API) window.KABAMAN_API.onOrders(refreshOrder);
 })();

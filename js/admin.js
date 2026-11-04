@@ -20,7 +20,8 @@
   var siteNote = document.getElementById("site-note");
   var draft = [];
   var logoValue = "";
-  var FORM_TYPES = ["sourcing", "importation", "inspection", "products", "auction"];
+  var serverRows = null;
+  var FORM_TYPES = ["sourcing", "importation", "inspection", "auction"];
   var list = document.getElementById("order-list");
   var filters = document.getElementById("order-filters");
   var openRef = "";
@@ -96,8 +97,7 @@
       sourcing: { name: "Sourcing", line: "Trouvez les meilleurs fournisseurs", price: "19,99 USD" },
       importation: { name: "Importation", line: "Service clé en main", price: rate },
       inspection: { name: "Inspection", line: "Inspection des échantillons", price: inspection },
-      products: { name: "Products", line: "Available goods", price: "On request" },
-      auction: { name: "Auction", line: "Unfinished imports and unsold goods", price: "Place a bid" },
+      auction: { name: "Auctions", line: "Unfinished imports and unsold goods", price: "Place a bid" },
     };
     var item = map[form] || map.sourcing;
     return { name: item.name, note: "", line: item.line, price: item.price, action: "", form: form };
@@ -175,8 +175,7 @@
         ["sourcing", "Sourcing"],
         ["importation", "Importation"],
         ["inspection", "Inspection"],
-        ["products", "Products"],
-        ["auction", "Auction"],
+        ["auction", "Auctions"],
       ].forEach(function (pair) {
         var option = document.createElement("option");
         option.value = pair[0];
@@ -275,7 +274,7 @@
     if (byId[serviceId]) return byId[serviceId];
     if (serviceName === "Inspection") return "inspection";
     if (serviceName === "Products") return "products";
-    if (serviceName === "Auction") return "auction";
+    if (serviceName === "Auction" || serviceName === "Auctions") return "auction";
     if (serviceName === "Sourcing") return "sourcing";
     return "import";
   }
@@ -292,6 +291,20 @@
   function idView(order) {
     var contact = order.contact || {};
     var image = contact.idImage || "";
+    if (!image && order.hasId && window.KABAMAN_API) {
+      var holder = document.createElement("p");
+      var open = document.createElement("button");
+      open.type = "button";
+      open.className = "btn-quiet";
+      open.textContent = "Open ID (" + (contact.idFileName || "document") + ")";
+      open.addEventListener("click", function () {
+        window.KABAMAN_API.openId(order.ref).catch(function () {
+          open.textContent = "ID file is not available";
+        });
+      });
+      holder.appendChild(open);
+      return holder;
+    }
     if (!image) {
       var note = contact.idFileName ? contact.idFileName + " — No picture saved" : "";
       return field("ID", note);
@@ -314,7 +327,7 @@
   }
 
   function paintOrders() {
-    var rows = window.KABAMAN.readOrders().slice().reverse();
+    var rows = (serverRows || window.KABAMAN.readOrders()).slice().reverse();
     var statuses = window.KABAMAN.orderStatuses;
     filters.replaceChildren();
     var counts = { All: rows.length };
@@ -486,8 +499,7 @@
       select.appendChild(option);
     });
     select.addEventListener("change", function () {
-      window.KABAMAN.updateOrder(order.ref, { status: select.value });
-      paintOrders();
+      persistOrder(order.ref, { status: select.value });
     });
     statusCell.append(pill, document.createElement("br"), select);
     tr.appendChild(statusCell);
@@ -510,8 +522,7 @@
       verify.className = "btn btn-gold";
       verify.textContent = "Verify ID";
       verify.addEventListener("click", function () {
-        window.KABAMAN.updateOrder(order.ref, { status: "Verified" });
-        paintOrders();
+        persistOrder(order.ref, { status: "Verified" });
       });
       actionBox.appendChild(verify);
     }
@@ -521,9 +532,8 @@
     remove.textContent = "Delete";
     remove.addEventListener("click", function () {
       if (!window.confirm("Delete " + order.ref + "?")) return;
-      window.KABAMAN.deleteOrder(order.ref);
       if (openRef === order.ref) openRef = "";
-      paintOrders();
+      removeOrder(order.ref);
     });
     actionBox.appendChild(remove);
     actions.appendChild(actionBox);
@@ -584,19 +594,95 @@
     saveReply.className = "btn btn-gold";
     saveReply.textContent = "Save reply";
     saveReply.addEventListener("click", function () {
-      window.KABAMAN.updateOrder(order.ref, { reply: reply.value.trim() });
       openRef = order.ref;
-      paintOrders();
+      persistOrder(order.ref, { reply: reply.value.trim() });
     });
     td.append(replyLabel, reply, saveReply);
     tr.appendChild(td);
     return tr;
   }
 
-  window.KABAMAN_SITE.whenReady(function (site) {
+  function reloadServerOrders() {
+    if (!serverRows || !window.KABAMAN_API) {
+      paintOrders();
+      return Promise.resolve();
+    }
+    return window.KABAMAN_API.adminOrders().then(function (rows) {
+      serverRows = rows;
+      paintOrders();
+    });
+  }
+
+  function persistOrder(ref, patch) {
+    if (serverRows && window.KABAMAN_API) return window.KABAMAN_API.updateOrder(ref, patch).then(reloadServerOrders);
+    window.KABAMAN.updateOrder(ref, patch);
+    paintOrders();
+  }
+
+  function removeOrder(ref) {
+    if (serverRows && window.KABAMAN_API) return window.KABAMAN_API.deleteOrder(ref).then(reloadServerOrders);
+    window.KABAMAN.deleteOrder(ref);
+    paintOrders();
+  }
+
+  function showAdmin(site, rows) {
+    var login = document.getElementById("admin-login");
+    var app = document.getElementById("admin-app");
+    if (login) login.hidden = true;
+    if (app) app.hidden = false;
+    if (rows) serverRows = rows;
     fillForm(site);
     paintOrders();
+    if (serverRows && document.getElementById("orders-note")) {
+      document.getElementById("orders-note").textContent = "Orders are stored on this server. Each customer sees only their own orders.";
+    }
+    if (serverRows && document.getElementById("site-storage-note")) {
+      document.getElementById("site-storage-note").textContent = "Saved changes apply on this server for every visitor.";
+    }
+  }
+
+  window.KABAMAN_SITE.whenReady(function (site) {
+    var login = document.getElementById("admin-login");
+    var app = document.getElementById("admin-app");
+    function local() {
+      serverRows = null;
+      showAdmin(site);
+    }
+    if (!window.KABAMAN_API) {
+      local();
+      return;
+    }
+    window.KABAMAN_API.available().then(function (online) {
+      if (!online) {
+        local();
+        return null;
+      }
+      return window.KABAMAN_API.me();
+    }).then(function (session) {
+      if (!session || !window.KABAMAN_API.usingServer()) return;
+      if (session.role !== "admin") {
+        if (login) login.hidden = false;
+        if (app) app.hidden = true;
+        return;
+      }
+      return window.KABAMAN_API.adminOrders().then(function (rows) {
+        showAdmin(site, rows);
+      });
+    }).catch(local);
   });
+
+  var adminLoginForm = document.getElementById("admin-login-form");
+  if (adminLoginForm) {
+    adminLoginForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      var note = document.getElementById("admin-login-note");
+      window.KABAMAN_API.adminLogin(document.getElementById("admin-password").value).then(function () {
+        window.location.reload();
+      }).catch(function (err) {
+        if (note) note.textContent = err.message || "Could not log in.";
+      });
+    });
+  }
 
   importRate.addEventListener("input", function () {
     if (importRate.value) paintLinkedPrices("importation", moneyLine(importRate.value, " USD / kg"));
@@ -672,22 +758,44 @@
         };
       }),
     });
-    if (!saved) {
-      siteNote.textContent = "This browser blocked saving. Try a smaller logo.";
+    function applySaved(site) {
+      if (!site) {
+        siteNote.textContent = "This browser blocked saving. Try a smaller logo.";
+        return;
+      }
+      var wantedLogo = logoValue;
+      fillForm(site);
+      if (wantedLogo && !(site.theme && site.theme.logo)) {
+        siteNote.textContent = "Saved, but the logo was too large to store. Other changes were kept.";
+        return;
+      }
+      siteNote.textContent = window.KABAMAN_API && window.KABAMAN_API.usingServer()
+        ? "Saved on this server for every visitor."
+        : "Saved on this browser. Reload the customer page to see it.";
+    }
+    if (saved && typeof saved.then === "function") {
+      saved.then(applySaved).catch(function (err) {
+        siteNote.textContent = err.message || "Could not save on the server.";
+      });
       return;
     }
-    var wantedLogo = logoValue;
-    fillForm(saved);
-    if (wantedLogo && !(saved.theme && saved.theme.logo)) {
-      siteNote.textContent = "Saved, but the logo was too large to store. Other changes were kept.";
-      return;
-    }
-    siteNote.textContent = "Saved on this browser. Reload the customer page to see it.";
+    applySaved(saved);
   });
 
   document.getElementById("site-reset").addEventListener("click", function () {
-    window.KABAMAN_SITE.reset();
-    fillForm(window.KABAMAN_SITE.get());
-    siteNote.textContent = "Restored the site.json defaults on this browser.";
+    var result = window.KABAMAN_SITE.reset();
+    function done(site) {
+      fillForm(site || window.KABAMAN_SITE.get());
+      siteNote.textContent = window.KABAMAN_API && window.KABAMAN_API.usingServer()
+        ? "Restored the site.json defaults on this server."
+        : "Restored the site.json defaults on this browser.";
+    }
+    if (result && typeof result.then === "function") {
+      result.then(done).catch(function (err) {
+        siteNote.textContent = err.message || "Could not reset the server copy.";
+      });
+      return;
+    }
+    done(result);
   });
 })();
