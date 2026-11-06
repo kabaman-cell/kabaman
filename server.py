@@ -16,7 +16,9 @@ import threading
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+import urllib.error
+import urllib.request
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "data"
@@ -30,6 +32,11 @@ PBKDF2_ROUNDS = 200_000
 SESSION_DAYS = 14
 MAX_BODY = 3_000_000
 MAX_ID_BYTES = 1_800_000
+WHATSAPP_VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "").strip()
+WHATSAPP_APP_SECRET = os.environ.get("WHATSAPP_APP_SECRET", "").strip()
+WHATSAPP_ACCESS_TOKEN = os.environ.get("WHATSAPP_ACCESS_TOKEN", "").strip()
+WHATSAPP_PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID", "").strip()
+WHATSAPP_GRAPH_VERSION = os.environ.get("WHATSAPP_GRAPH_VERSION", "").strip()
 
 db_lock = threading.Lock()
 listeners = []
@@ -134,6 +141,27 @@ def migrate(conn):
           data TEXT NOT NULL,
           updated_at TEXT NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS whatsapp_conversations (
+          wa_id TEXT PRIMARY KEY,
+          contact_name TEXT NOT NULL DEFAULT '',
+          last_message_at TEXT NOT NULL,
+          last_message_preview TEXT NOT NULL DEFAULT '',
+          unread_count INTEGER NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS whatsapp_messages (
+          id INTEGER PRIMARY KEY,
+          wa_message_id TEXT UNIQUE,
+          wa_id TEXT NOT NULL,
+          direction TEXT NOT NULL,
+          message_type TEXT NOT NULL DEFAULT 'text',
+          body TEXT NOT NULL DEFAULT '',
+          media_id TEXT NOT NULL DEFAULT '',
+          status TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_whatsapp_messages_thread
+          ON whatsapp_messages (wa_id, id);
         """
     )
     if "orders" in {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}:
@@ -465,6 +493,209 @@ class Handler(BaseHTTPRequestHandler):
             return False
         return True
 
+    def whatsapp_webhook_get(self):
+        query = parse_qs(urlparse(self.path).query)
+        mode = (query.get("hub.mode") or [""])[0]
+        token = (query.get("hub.verify_token") or [""])[0]
+        challenge = (query.get("hub.challenge") or [""])[0]
+        if mode != "subscribe" or not WHATSAPP_VERIFY_TOKEN or not hmac.compare_digest(token, WHATSAPP_VERIFY_TOKEN):
+            self.send_error(403)
+            return
+        body = challenge.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def store_whatsapp_payload(self, payload):
+        def message_text(message, kind):
+            item = message.get(kind)
+            if not isinstance(item, dict):
+                return ""
+            if kind == "text":
+                return str(item.get("body") or "")
+            if kind in ("image", "video", "document", "audio", "sticker"):
+                caption = str(item.get("caption") or "")
+                filename = str(item.get("filename") or "")
+                label = {"image": "Photo", "video": "Vidéo", "document": "Document", "audio": "Audio", "sticker": "Sticker"}.get(kind, kind)
+                details = filename or caption
+                return (label + " — " + details) if details else label + " reçu"
+            if kind == "location":
+                return "Localisation partagée"
+            if kind == "contacts":
+                return "Contact partagé"
+            if kind == "button":
+                return str(item.get("text") or item.get("payload") or "Réponse rapide")
+            if kind == "interactive":
+                button = item.get("button_reply") or {}
+                list_reply = item.get("list_reply") or {}
+                return str(button.get("title") or list_reply.get("title") or "Réponse interactive")
+            if kind == "reaction":
+                return str(item.get("emoji") or "Réaction")
+            return str(item.get("text") or item.get("title") or "")
+
+        def message_media_id(message, kind):
+            item = message.get(kind)
+            if kind not in ("image", "video", "document", "audio", "sticker") or not isinstance(item, dict):
+                return ""
+            return str(item.get("id") or "")[:200]
+
+        entries = payload.get("entry") or []
+        with db_lock:
+            conn = connect()
+            try:
+                for entry in entries:
+                    for change in entry.get("changes") or []:
+                        value = change.get("value") or {}
+                        contacts = {}
+                        for contact in value.get("contacts") or []:
+                            wa_id = str(contact.get("wa_id") or "")
+                            profile = contact.get("profile") or {}
+                            if wa_id:
+                                contacts[wa_id] = str(profile.get("name") or "")[:120]
+                        for message in value.get("messages") or []:
+                            wa_id = str(message.get("from") or "")[:100]
+                            message_id = str(message.get("id") or "")[:200]
+                            kind = str(message.get("type") or "unknown")[:40]
+                            if not wa_id or not message_id:
+                                continue
+                            try:
+                                sent_at = datetime.fromtimestamp(int(message.get("timestamp")), timezone.utc).replace(microsecond=0).isoformat()
+                            except (TypeError, ValueError, OSError):
+                                sent_at = now()
+                            body = message_text(message, kind)[:4000]
+                            media_id = message_media_id(message, kind)
+                            display = body or ("Contenu " + kind)
+                            name = contacts.get(wa_id, "")
+                            conn.execute(
+                                "INSERT INTO whatsapp_conversations (wa_id, contact_name, last_message_at, last_message_preview, unread_count, updated_at) "
+                                "VALUES (?, ?, ?, '', 0, ?) ON CONFLICT(wa_id) DO UPDATE SET "
+                                "contact_name = CASE WHEN excluded.contact_name <> '' THEN excluded.contact_name ELSE whatsapp_conversations.contact_name END, "
+                                "updated_at = excluded.updated_at",
+                                (wa_id, name, sent_at, now()),
+                            )
+                            inserted = conn.execute(
+                                "INSERT OR IGNORE INTO whatsapp_messages "
+                                "(wa_message_id, wa_id, direction, message_type, body, media_id, status, created_at) "
+                                "VALUES (?, ?, 'inbound', ?, ?, ?, 'received', ?)",
+                                (message_id, wa_id, kind, body, media_id, sent_at),
+                            )
+                            if inserted.rowcount:
+                                conn.execute(
+                                    "UPDATE whatsapp_conversations SET last_message_at = ?, last_message_preview = ?, "
+                                    "unread_count = unread_count + 1, updated_at = ? WHERE wa_id = ?",
+                                    (sent_at, display[:300], now(), wa_id),
+                                )
+                        for status in value.get("statuses") or []:
+                            message_id = str(status.get("id") or "")
+                            state = str(status.get("status") or "")[:40]
+                            if message_id and state:
+                                conn.execute(
+                                    "UPDATE whatsapp_messages SET status = ? WHERE wa_message_id = ?",
+                                    (state, message_id),
+                                )
+                conn.commit()
+            finally:
+                conn.close()
+
+    def handle_whatsapp_webhook(self):
+        length = int(self.headers.get("Content-Length") or "0")
+        if length <= 0 or length > MAX_BODY:
+            self.send_json(413 if length > MAX_BODY else 400, {"error": "Invalid webhook body."})
+            return
+        raw = self.rfile.read(length)
+        if not WHATSAPP_APP_SECRET:
+            self.send_json(503, {"error": "WhatsApp webhook is not configured."})
+            return
+        signature = self.headers.get("X-Hub-Signature-256") or ""
+        expected = "sha256=" + hmac.new(WHATSAPP_APP_SECRET.encode("utf-8"), raw, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            self.send_json(403, {"error": "Invalid webhook signature."})
+            return
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("Webhook payload must be an object.")
+        except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+            self.send_json(400, {"error": "Invalid webhook JSON."})
+            return
+        try:
+            self.store_whatsapp_payload(payload)
+        except (sqlite3.Error, KeyError, TypeError, ValueError):
+            self.send_json(500, {"error": "Could not store WhatsApp webhook."})
+            return
+        self.send_json(200, {"ok": True})
+
+    def send_whatsapp_reply(self, data):
+        if not self.require_admin():
+            return
+        recipient = str(data.get("to") or "").strip()
+        body = str(data.get("text") or "").strip()
+        if not recipient or len(recipient) > 100 or not body or len(body) > 4096:
+            self.send_json(400, {"error": "Ajoute un destinataire et un message de 1 à 4096 caractères."})
+            return
+        if not WHATSAPP_ACCESS_TOKEN or not WHATSAPP_PHONE_NUMBER_ID or not WHATSAPP_GRAPH_VERSION:
+            self.send_json(503, {"error": "La connexion WhatsApp Business Platform n’est pas configurée."})
+            return
+        url = "https://graph.facebook.com/%s/%s/messages" % (
+            quote(WHATSAPP_GRAPH_VERSION, safe=""),
+            quote(WHATSAPP_PHONE_NUMBER_ID, safe=""),
+        )
+        request_body = json.dumps({
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": recipient,
+            "type": "text",
+            "text": {"preview_url": False, "body": body},
+        }).encode("utf-8")
+        request = urllib.request.Request(
+            url,
+            data=request_body,
+            headers={
+                "Authorization": "Bearer " + WHATSAPP_ACCESS_TOKEN,
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=20) as response:
+                result = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            try:
+                detail = json.loads(error.read().decode("utf-8")).get("error", {}).get("message", "WhatsApp API error.")
+            except (UnicodeDecodeError, json.JSONDecodeError, AttributeError):
+                detail = "WhatsApp API error."
+            self.send_json(502, {"error": str(detail)[:300]})
+            return
+        except (urllib.error.URLError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError):
+            self.send_json(502, {"error": "WhatsApp n’a pas pu être joint. Réessaie."})
+            return
+        messages = result.get("messages") or []
+        message_id = str((messages[0] if messages else {}).get("id") or "")
+        created = now()
+        with db_lock:
+            conn = connect()
+            try:
+                conn.execute(
+                    "INSERT INTO whatsapp_conversations (wa_id, contact_name, last_message_at, last_message_preview, unread_count, updated_at) "
+                    "VALUES (?, '', ?, ?, 0, ?) ON CONFLICT(wa_id) DO UPDATE SET "
+                    "last_message_at = excluded.last_message_at, last_message_preview = excluded.last_message_preview, "
+                    "updated_at = excluded.updated_at",
+                    (recipient, created, body[:300], created),
+                )
+                conn.execute(
+                    "INSERT OR IGNORE INTO whatsapp_messages "
+                    "(wa_message_id, wa_id, direction, message_type, body, media_id, status, created_at) "
+                    "VALUES (?, ?, 'outbound', 'text', ?, '', 'sent', ?)",
+                    (message_id or None, recipient, body, created),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        self.send_json(200, {"ok": True, "id": message_id})
+
     def do_GET(self):
         path = unquote(urlparse(self.path).path)
         if path == "/api/health":
@@ -473,6 +704,46 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/me":
             me, _customer_id = self.current()
             self.send_json(200, me or {"role": ""})
+            return
+        if path == "/api/whatsapp/webhook":
+            self.whatsapp_webhook_get()
+            return
+        if path == "/api/admin/whatsapp/status":
+            if not self.require_admin():
+                return
+            enabled = all((WHATSAPP_VERIFY_TOKEN, WHATSAPP_APP_SECRET, WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID, WHATSAPP_GRAPH_VERSION))
+            self.send_json(200, {"enabled": bool(enabled)})
+            return
+        if path == "/api/admin/whatsapp/conversations":
+            if not self.require_admin():
+                return
+            with db_lock:
+                conn = connect()
+                try:
+                    rows = conn.execute(
+                        "SELECT wa_id, contact_name, last_message_at, last_message_preview, unread_count "
+                        "FROM whatsapp_conversations ORDER BY last_message_at DESC"
+                    ).fetchall()
+                    self.send_json(200, {"conversations": [dict(row) for row in rows]})
+                finally:
+                    conn.close()
+            return
+        if path.startswith("/api/admin/whatsapp/conversations/"):
+            if not self.require_admin():
+                return
+            parts = path.split("/")
+            wa_id = parts[5] if len(parts) > 5 else ""
+            with db_lock:
+                conn = connect()
+                try:
+                    rows = conn.execute(
+                        "SELECT wa_message_id, wa_id, direction, message_type, body, status, created_at "
+                        "FROM whatsapp_messages WHERE wa_id = ? ORDER BY id",
+                        (wa_id,),
+                    ).fetchall()
+                    self.send_json(200, {"messages": [dict(row) for row in rows]})
+                finally:
+                    conn.close()
             return
         if path == "/api/site":
             with db_lock:
@@ -544,6 +815,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = unquote(urlparse(self.path).path)
+        if path == "/api/whatsapp/webhook":
+            self.handle_whatsapp_webhook()
+            return
         data = self.read_json()
         if data is None:
             self.send_json(400, {"error": "The request could not be read."})
@@ -570,6 +844,23 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/api/orders":
             self.create_order(data)
+            return
+        if path == "/api/admin/whatsapp/send":
+            self.send_whatsapp_reply(data)
+            return
+        if path.startswith("/api/admin/whatsapp/conversations/") and path.endswith("/read"):
+            if not self.require_admin():
+                return
+            parts = path.split("/")
+            wa_id = parts[5] if len(parts) > 6 else ""
+            with db_lock:
+                conn = connect()
+                try:
+                    conn.execute("UPDATE whatsapp_conversations SET unread_count = 0 WHERE wa_id = ?", (wa_id,))
+                    conn.commit()
+                finally:
+                    conn.close()
+            self.send_json(200, {"ok": True})
             return
         if path == "/api/admin/site/reset":
             if not self.require_admin():
