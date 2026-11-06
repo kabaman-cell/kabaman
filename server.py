@@ -451,14 +451,17 @@ class Handler(BaseHTTPRequestHandler):
 
     def set_session(self, token):
         expires = datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)
-        cookie = "kabaman_session=%s; HttpOnly; SameSite=Lax; Path=/; Max-Age=%d" % (
+        secure = "; Secure" if os.environ.get("KABAMAN_SECURE_COOKIES", "").lower() in ("1", "true", "yes") else ""
+        cookie = "kabaman_session=%s; HttpOnly; SameSite=Lax; Path=/; Max-Age=%d%s" % (
             token,
             SESSION_DAYS * 24 * 3600,
+            secure,
         )
         return [("Set-Cookie", cookie)]
 
     def clear_session(self):
-        return [("Set-Cookie", "kabaman_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0")]
+        secure = "; Secure" if os.environ.get("KABAMAN_SECURE_COOKIES", "").lower() in ("1", "true", "yes") else ""
+        return [("Set-Cookie", "kabaman_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0" + secure)]
 
     def current(self):
         with db_lock:
