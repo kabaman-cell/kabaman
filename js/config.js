@@ -6,4 +6,10 @@
    so prefer a server later if you connect the real API. */
 window.KABAMAN_CONFIG = {
   alibabaAppKey: "",
+
+  /* Supabase Auth for customer accounts.
+     Fill these with the Supabase project URL and public anon/publishable key.
+     Never put a service_role key or provider secret in this file. */
+  supabaseUrl: "",
+  supabaseAnonKey: "",
 };

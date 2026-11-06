@@ -1,0 +1,169 @@
+.account-auth-page {
+  width: min(100% - 32px, 470px);
+  margin: 54px auto 72px;
+}
+
+.account-auth-page .account-board {
+  padding: clamp(22px, 5vw, 36px);
+}
+
+.account-auth-page h1 {
+  margin-bottom: 10px;
+}
+
+.social-auth {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0 18px;
+}
+
+.social-auth-button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border: 1px solid #d8d8d8;
+  border-radius: 4px;
+  background: #fff;
+  color: #171717;
+  font: 500 15px "Outfit", sans-serif;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+
+.social-auth-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .22);
+}
+
+.social-auth-button:focus-visible,
+.auth-switch:focus-visible {
+  outline: 2px solid #d4af37;
+  outline-offset: 3px;
+}
+
+.social-auth-button:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+
+.social-mark,
+.apple-mark {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.google-mark {
+  color: #4285f4;
+  font-family: Arial, sans-serif;
+  font-size: 21px;
+}
+
+.facebook-mark {
+  align-items: flex-end;
+  border-radius: 50%;
+  background: #0866ff;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 19px;
+}
+
+.apple-mark {
+  fill: #111;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: rgba(246, 239, 217, .62);
+  font-size: .88rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: rgba(246, 239, 217, .2);
+  content: "";
+}
+
+.account-auth-page #auth-register-fields:not([hidden]) {
+  display: grid;
+  gap: 14px;
+}
+
+.account-auth-page .auth-switch {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.auth-config-note {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(212, 175, 55, .4);
+  border-radius: 4px;
+  background: rgba(212, 175, 55, .08);
+  color: #ead48b;
+  font-size: .9rem;
+  line-height: 1.55;
+}
+
+.account-email {
+  color: rgba(246, 239, 217, .72);
+  overflow-wrap: anywhere;
+}
+
+.account-orders-heading {
+  margin-top: 28px;
+}
+
+.account-orders-heading h2 {
+  margin-bottom: 6px;
+  font-family: "Cinzel", serif;
+  font-size: 1.3rem;
+}
+
+.account-orders-heading .search-hint {
+  line-height: 1.45;
+}
+
+.account-order-card {
+  margin: 10px 0;
+  padding: 14px;
+  border: 1px solid rgba(212, 175, 55, .25);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, .03);
+}
+
+.account-order-card h3 {
+  margin: 0 0 7px;
+  font-size: 1rem;
+}
+
+.account-order-card p {
+  margin: 4px 0;
+  color: rgba(246, 239, 217, .72);
+}
+
+.account-logout {
+  margin-top: 24px;
+}
+
+@media (max-width: 520px) {
+  .account-auth-page {
+    width: min(100% - 20px, 470px);
+    margin-top: 30px;
+  }
+}
