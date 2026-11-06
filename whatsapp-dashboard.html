@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#090909" />
+  <title>Commandes WhatsApp | KABAMAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/whatsapp-dashboard.css" />
+  <link rel="icon" href="assets/logo.jpg?v=circle" type="image/jpeg" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark"><img src="assets/logo.jpg?v=circle" alt="KABAMAN" /></span>
+        <strong>KABAMAN</strong>
+      </a>
+      <nav class="wa-nav-actions" aria-label="Navigation">
+        <a class="btn btn-quiet" href="admin.html">Administration</a>
+        <a class="btn btn-gold" href="index.html">Site client</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wa-page">
+    <section class="wa-heading">
+      <div>
+        <p class="eyebrow">Gestion des commandes</p>
+        <h1>Commandes WhatsApp</h1>
+        <p class="wa-lead">Enregistre ici les commandes reçues dans WhatsApp Business, puis suis leur traitement.</p>
+      </div>
+      <button class="btn btn-gold" id="export-orders" type="button">Exporter la sauvegarde CSV</button>
+    </section>
+
+    <aside class="wa-storage-note" role="note">
+      <strong>Enregistrement sur cet appareil</strong>
+      <span>Les messages ne sont pas importés automatiquement. Les commandes sont gardées dans ce navigateur uniquement : elles ne se synchronisent pas avec un autre téléphone ou ordinateur. Exporte régulièrement une sauvegarde CSV.</span>
+    </aside>
+
+    <section class="wa-metrics" aria-label="Résumé des commandes">
+      <article class="wa-metric"><span>Total</span><strong id="metric-total">0</strong></article>
+      <article class="wa-metric"><span>Nouvelles</span><strong id="metric-new">0</strong></article>
+      <article class="wa-metric"><span>En cours</span><strong id="metric-progress">0</strong></article>
+      <article class="wa-metric"><span>Livrées</span><strong id="metric-done">0</strong></article>
+    </section>
+
+    <section class="wa-panel">
+      <div class="wa-panel-heading">
+        <div>
+          <p class="eyebrow">Saisie manuelle</p>
+          <h2>Ajouter une commande</h2>
+        </div>
+        <span class="wa-source-badge">WhatsApp Business</span>
+      </div>
+
+      <form id="manual-order-form" class="wa-form">
+        <label>Nom du client
+          <input name="customerName" maxlength="100" autocomplete="name" required placeholder="Nom et prénom" />
+        </label>
+        <label>Numéro WhatsApp
+          <input name="phone" type="tel" maxlength="30" autocomplete="tel" required placeholder="+213 …" />
+          <small>Ajoute l’indicatif du pays pour ouvrir le bon contact.</small>
+        </label>
+        <label>Wilaya / ville
+          <input name="location" maxlength="100" autocomplete="address-level1" placeholder="Ex. Alger" />
+        </label>
+        <label>Produit ou service
+          <input name="item" maxlength="160" required placeholder="Ex. chaussures, sourcing…" />
+        </label>
+        <label>Quantité
+          <input name="quantity" maxlength="80" placeholder="Ex. 3 pièces ou 5 kg" />
+        </label>
+        <label>Total convenu (DZD)
+          <input name="total" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Facultatif" />
+        </label>
+        <label class="wa-form-wide">Résumé ou extrait du message
+          <textarea name="note" rows="3" maxlength="1000" placeholder="Copie ici les détails utiles de la conversation. Évite les informations sensibles."></textarea>
+        </label>
+        <div class="wa-form-actions">
+          <button class="btn btn-gold" type="submit">Enregistrer la commande</button>
+          <p id="form-note" class="wa-status-message" role="status" aria-live="polite"></p>
+        </div>
+      </form>
+    </section>
+
+    <section class="wa-orders-section">
+      <div class="wa-list-heading">
+        <div>
+          <p class="eyebrow">Suivi</p>
+          <h2>Commandes enregistrées</h2>
+        </div>
+        <div class="wa-list-controls">
+          <label class="wa-search-label" for="order-search">Rechercher</label>
+          <input id="order-search" type="search" placeholder="Nom, téléphone, référence…" />
+          <select id="order-filter" aria-label="Filtrer par état">
+            <option value="">Tous les états</option>
+            <option>Nouveau</option>
+            <option>Confirmée</option>
+            <option>En préparation</option>
+            <option>Expédiée</option>
+            <option>Livrée</option>
+            <option>Annulée</option>
+          </select>
+        </div>
+      </div>
+      <div id="orders-list" class="wa-orders-list"></div>
+      <p id="empty-orders" class="wa-empty" hidden>Aucune commande pour le moment. Ajoute la première commande reçue sur WhatsApp.</p>
+      <p id="storage-error" class="wa-error" role="alert" hidden>Le navigateur n’a pas pu enregistrer les données. Exporte les commandes existantes avant de continuer.</p>
+    </section>
+  </main>
+
+  <script src="js/whatsapp-dashboard.js"></script>
+</body>
+</html>
