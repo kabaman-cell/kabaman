@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Account | KABAMAN</title>
+  <meta name="theme-color" content="#090909" />
+  <title>Mon compte | KABAMAN</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/account-auth.css" />
   <link rel="icon" href="assets/logo.jpg?v=circle" type="image/jpeg" />
 </head>
 <body class="customer">
@@ -17,56 +19,85 @@
         <span class="brand-mark"><img src="assets/logo.jpg?v=circle" alt="KABAMAN" /></span>
         <strong>KABAMAN</strong>
       </a>
-      <a class="account-link" href="index.html">Customer page</a>
+      <a class="account-link" href="index.html">Retour au site</a>
     </div>
   </header>
-  <main>
+  <main class="account-auth-page">
     <section id="account-gate" class="account-board">
-      <p class="eyebrow">Account</p>
-      <h1>Log in</h1>
-      <p class="search-hint">Create an account or log in to see your orders.</p>
+      <p class="eyebrow">Espace client KABAMAN</p>
+      <h1 id="auth-heading">Connexion</h1>
+      <p class="search-hint" id="auth-intro">Crée ton compte ou connecte-toi pour retrouver ton espace client.</p>
+
+      <div class="social-auth" aria-label="Créer un compte ou se connecter avec un réseau social">
+        <button class="social-auth-button social-google" type="button" data-social-provider="google">
+          <span class="social-mark google-mark" aria-hidden="true">G</span>
+          <span>Continuer avec Google</span>
+        </button>
+        <button class="social-auth-button social-facebook" type="button" data-social-provider="facebook">
+          <span class="social-mark facebook-mark" aria-hidden="true">f</span>
+          <span>Continuer avec Facebook</span>
+        </button>
+        <button class="social-auth-button social-apple" type="button" data-social-provider="apple">
+          <svg class="apple-mark" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M16.7 12.8c0-2.2 1.8-3.3 1.9-3.4-1-1.5-2.7-1.7-3.3-1.8-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.6 1.1 8.8.7 1.1 1.6 2.3 2.7 2.2 1.1 0 1.5-.7 2.9-.7s1.8.7 3 .7 1.9-1.1 2.6-2.2c.8-1.2 1.1-2.4 1.1-2.5-.1 0-2-.8-2-3.3ZM14.4 6.1c.6-.8 1-1.9.9-3-.9 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2.1-.5 2.9-1.2Z"/>
+          </svg>
+          <span>Continuer avec Apple</span>
+        </button>
+      </div>
+      <div class="auth-divider"><span>ou par e-mail</span></div>
+
       <form id="auth-form" class="link-order">
-        <label for="auth-email">Email
-          <input id="auth-email" type="email" autocomplete="username" required />
+        <label for="auth-email">Adresse e-mail
+          <input id="auth-email" name="email" type="email" autocomplete="email" required />
         </label>
-        <label for="auth-password">Password
-          <input id="auth-password" type="password" autocomplete="current-password" minlength="8" required />
+        <label for="auth-password">Mot de passe
+          <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" required />
         </label>
         <div id="auth-register-fields" hidden>
-          <label for="auth-name">Name
-            <input id="auth-name" type="text" maxlength="100" autocomplete="name" />
+          <label for="auth-confirm-password">Confirmer le mot de passe
+            <input id="auth-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" />
           </label>
-          <label for="auth-phone">Phone
-            <input id="auth-phone" type="tel" maxlength="40" autocomplete="tel" />
+          <label for="auth-name">Nom
+            <input id="auth-name" name="name" type="text" maxlength="100" autocomplete="name" />
+          </label>
+          <label for="auth-phone">Téléphone
+            <input id="auth-phone" name="phone" type="tel" maxlength="40" autocomplete="tel" />
           </label>
         </div>
-        <p id="auth-note" class="form-note" role="alert"></p>
-        <button class="btn btn-gold" id="auth-submit" type="submit">Log in</button>
-        <button class="btn btn-gold" id="auth-switch" type="button">Create an account</button>
+        <p id="auth-note" class="form-note" role="status" aria-live="polite"></p>
+        <button class="btn btn-gold" id="auth-submit" type="submit">Se connecter</button>
+        <button class="btn btn-quiet auth-switch" id="auth-switch" type="button">Créer un compte avec e-mail</button>
       </form>
+      <p id="auth-config-note" class="auth-config-note" hidden></p>
     </section>
+
     <section id="account-board" class="account-board" hidden>
-      <p class="eyebrow">Account</p>
-      <h1 id="account-heading">Your orders</h1>
-      <p id="profile-email"></p>
+      <p class="eyebrow">Espace client KABAMAN</p>
+      <h1 id="account-heading">Mon compte</h1>
+      <p id="profile-email" class="account-email"></p>
       <form id="profile-form" class="link-order">
-        <label for="profile-name">Name
-          <input id="profile-name" type="text" maxlength="100" required />
+        <label for="profile-name">Nom
+          <input id="profile-name" type="text" maxlength="100" autocomplete="name" required />
         </label>
-        <label for="profile-phone">Phone
-          <input id="profile-phone" type="tel" maxlength="40" />
+        <label for="profile-phone">Téléphone
+          <input id="profile-phone" type="tel" maxlength="40" autocomplete="tel" />
         </label>
-        <p id="profile-note" class="form-note" role="status"></p>
-        <button class="btn btn-gold" type="submit">Save profile</button>
+        <p id="profile-note" class="form-note" role="status" aria-live="polite"></p>
+        <button class="btn btn-gold" type="submit">Enregistrer le profil</button>
       </form>
+      <div class="account-orders-heading">
+        <h2>Mes commandes</h2>
+        <p id="account-orders-note" class="search-hint">Les commandes enregistrées sur cet appareil s’affichent ici.</p>
+      </div>
       <div id="account-orders"></div>
-      <button class="btn btn-gold" id="account-logout" type="button">Log out</button>
+      <button class="btn btn-quiet account-logout" id="account-logout" type="button">Se déconnecter</button>
     </section>
   </main>
   <footer class="footer">
     <p class="slogan">LA QUALITÉ PRIORITÉ</p>
   </footer>
   <script src="js/store.js"></script>
-  <script src="js/api.js"></script>
+  <script src="js/config.js"></script>
+  <script type="module" src="js/account-auth.js"></script>
 </body>
 </html>
