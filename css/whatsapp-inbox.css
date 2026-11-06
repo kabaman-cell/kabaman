@@ -138,6 +138,17 @@
   border-radius: 8px;
 }
 .wa-empty { color: rgba(246,239,217,.62); padding: 20px 4px; }
+.wa-attachment {
+  display: block;
+  width: auto;
+  max-width: min(100%, 520px);
+  max-height: 420px;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: #050505;
+}
+.wa-attachment-audio { display: block; width: min(100%, 420px); margin-top: 8px; }
+.wa-attachment-link { display: inline-block; margin-top: 8px; color: #d4af37; text-decoration: underline; }
 @media (max-width: 760px) {
   .wa-page { width: min(100% - 20px, 680px); margin-top: 24px; }
   .wa-app { grid-template-columns: 1fr; min-height: auto; }
