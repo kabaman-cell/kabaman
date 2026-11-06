@@ -42,7 +42,7 @@
   function makeRef() {
     var date = new Date();
     var stamp = date.getFullYear() + String(date.getMonth() + 1).padStart(2, "0") + String(date.getDate()).padStart(2, "0");
-    return "KBW-" + stamp + "-" + String(Math.floor(1000 + Math.random() * 9000));
+    return "KBW-" + stamp + "-" + makeId().replace(/-/g, "").slice(-6).toUpperCase();
   }
 
   function el(tag, className, text) {
@@ -146,7 +146,6 @@
   }
 
   function renderMetrics(orders) {
-    var active = orders.filter(function (order) { return order.status !== "Livrée" && order.status !== "Annulée"; });
     var progress = orders.filter(function (order) {
       return ["Confirmée", "En préparation", "Expédiée"].indexOf(order.status) !== -1;
     });
@@ -154,7 +153,6 @@
     document.getElementById("metric-new").textContent = String(orders.filter(function (order) { return order.status === "Nouveau"; }).length);
     document.getElementById("metric-progress").textContent = String(progress.length);
     document.getElementById("metric-done").textContent = String(orders.filter(function (order) { return order.status === "Livrée"; }).length);
-    document.getElementById("metric-total").setAttribute("aria-label", String(active.length) + " commandes actives sur " + String(orders.length));
   }
 
   function render() {
@@ -186,7 +184,9 @@
       return [order.ref, formatDate(order.createdAt), order.customerName, order.phone, order.location, order.item, order.quantity, order.total, order.status, order.note];
     });
     function quote(value) {
-      return '"' + String(value === undefined || value === null ? "" : value).replace(/"/g, '""') + '"';
+      var text = String(value === undefined || value === null ? "" : value);
+      if (/^[\\s]*[=+\\-@]/.test(text)) text = "'" + text;
+      return '"' + text.replace(/"/g, '""') + '"';
     }
     var csv = "\uFEFF" + [columns].concat(rows).map(function (row) { return row.map(quote).join(";"); }).join("\r\n");
     var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
