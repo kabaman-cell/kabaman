@@ -14,6 +14,7 @@ Configure ces valeurs dans les paramètres privés de l’hébergeur. Ne les col
 
 - `KABAMAN_ADMIN_PASSWORD` : mot de passe d’accès administrateur.
 - `KABAMAN_HOST` : utiliser `0.0.0.0` sur un hébergeur de serveurs.
+- `KABAMAN_SECURE_COOKIES` : utiliser `1` quand le site est servi en HTTPS.
 - `KABAMAN_DATA_DIR` : dossier persistant qui contient la base SQLite et les pièces d’identité déjà téléversées.
 - `WHATSAPP_VERIFY_TOKEN` : secret choisi pour vérifier l’abonnement webhook.
 - `WHATSAPP_APP_SECRET` : secret de l’application Meta, utilisé pour vérifier la signature des événements.
