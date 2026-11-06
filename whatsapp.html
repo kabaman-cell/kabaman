@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#070707" />
+  <title>Boîte WhatsApp | KABAMAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/whatsapp-inbox.css" />
+  <link rel="icon" href="assets/logo.jpg?v=circle" type="image/jpeg" />
+</head>
+<body>
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="admin.html">
+        <span class="brand-mark"><img src="assets/logo.jpg?v=circle" alt="KABAMAN" /></span>
+        <strong>KABAMAN</strong>
+      </a>
+      <nav class="inbox-nav">
+        <a class="btn btn-gold" href="admin.html">Administration</a>
+        <button class="btn btn-gold" id="inbox-logout" type="button" hidden>Déconnexion</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wa-page">
+    <section class="wa-heading">
+      <p class="eyebrow">Espace de travail</p>
+      <h1>Boîte WhatsApp</h1>
+      <p class="wa-lede">Retrouve ici les conversations reçues sur le numéro KABAMAN et réponds depuis le tableau de bord.</p>
+      <p id="wa-notice" class="wa-notice" role="status">Vérification de la connexion sécurisée…</p>
+    </section>
+
+    <section id="wa-login" class="wa-login admin-block" hidden>
+      <h2>Connexion administrateur</h2>
+      <p class="admin-note">Connecte-toi pour consulter les conversations KABAMAN.</p>
+      <form id="wa-login-form" class="link-order">
+        <label for="wa-admin-password">Mot de passe administrateur
+          <input id="wa-admin-password" type="password" autocomplete="current-password" required />
+        </label>
+        <p id="wa-login-error" class="form-note" role="alert"></p>
+        <button class="btn btn-gold" type="submit">Se connecter</button>
+      </form>
+    </section>
+
+    <section id="wa-app" class="wa-app" hidden>
+      <aside class="wa-threads admin-block" aria-label="Conversations">
+        <div class="wa-list-head">
+          <div><h2>Conversations</h2><p id="wa-count" class="admin-note">0 message</p></div>
+          <button id="wa-refresh" class="wa-icon-button" type="button" aria-label="Actualiser les conversations">↻</button>
+        </div>
+        <label class="wa-search-label" for="wa-search">Rechercher</label>
+        <input id="wa-search" class="wa-search" type="search" placeholder="Nom ou numéro" autocomplete="off" />
+        <div id="wa-thread-list" class="wa-thread-list" role="listbox" aria-label="Liste des conversations">
+          <p class="wa-empty">Aucune conversation reçue.</p>
+        </div>
+      </aside>
+
+      <section class="wa-chat admin-block" aria-label="Conversation sélectionnée">
+        <header class="wa-chat-head">
+          <div>
+            <h2 id="wa-chat-name">Choisis une conversation</h2>
+            <p id="wa-chat-number" class="admin-note"></p>
+          </div>
+          <a id="wa-open-phone" class="wa-open-phone" href="#" target="_blank" rel="noopener noreferrer" hidden>Ouvrir WhatsApp</a>
+        </header>
+        <div id="wa-messages" class="wa-messages" aria-live="polite">
+          <p class="wa-empty">Les nouveaux messages apparaîtront ici.</p>
+        </div>
+        <form id="wa-reply-form" class="wa-reply-form" hidden>
+          <label class="visually-hidden" for="wa-reply">Ta réponse</label>
+          <textarea id="wa-reply" rows="2" maxlength="4096" placeholder="Écris une réponse…"></textarea>
+          <button class="btn btn-gold" type="submit">Envoyer</button>
+        </form>
+        <p id="wa-chat-status" class="wa-chat-status" role="status"></p>
+      </section>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/whatsapp-inbox.js"></script>
+</body>
+</html>

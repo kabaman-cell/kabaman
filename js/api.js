@@ -282,6 +282,22 @@
     },
     updateOrder: function (ref, patch) { return request("PATCH", "/api/admin/orders/" + encodeURIComponent(ref), patch); },
     deleteOrder: function (ref) { return request("DELETE", "/api/admin/orders/" + encodeURIComponent(ref)); },
+    logout: function () {
+      return request("POST", "/api/logout", {}).then(function () { rememberMe({ role: "" }); });
+    },
+    whatsappStatus: function () { return request("GET", "/api/admin/whatsapp/status"); },
+    whatsappConversations: function () {
+      return request("GET", "/api/admin/whatsapp/conversations").then(function (data) { return data.conversations || []; });
+    },
+    whatsappMessages: function (waId) {
+      return request("GET", "/api/admin/whatsapp/conversations/" + encodeURIComponent(waId)).then(function (data) { return data.messages || []; });
+    },
+    whatsappMarkRead: function (waId) {
+      return request("POST", "/api/admin/whatsapp/conversations/" + encodeURIComponent(waId) + "/read", {});
+    },
+    whatsappSendReply: function (waId, text) {
+      return request("POST", "/api/admin/whatsapp/send", { to: waId, text: text });
+    },
     openId: function (ref) {
       return fetch("/api/admin/orders/" + encodeURIComponent(ref) + "/id", { credentials: "same-origin" })
         .then(function (response) {
