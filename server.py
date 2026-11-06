@@ -32,6 +32,7 @@ PBKDF2_ROUNDS = 200_000
 SESSION_DAYS = 14
 MAX_BODY = 3_000_000
 MAX_ID_BYTES = 1_800_000
+MAX_WHATSAPP_MEDIA_BYTES = 25_000_000
 WHATSAPP_VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "").strip()
 WHATSAPP_APP_SECRET = os.environ.get("WHATSAPP_APP_SECRET", "").strip()
 WHATSAPP_ACCESS_TOKEN = os.environ.get("WHATSAPP_ACCESS_TOKEN", "").strip()
@@ -699,6 +700,83 @@ class Handler(BaseHTTPRequestHandler):
                 conn.close()
         self.send_json(200, {"ok": True, "id": message_id})
 
+    def send_whatsapp_media(self, media_id):
+        if not self.require_admin():
+            return
+        if not WHATSAPP_ACCESS_TOKEN or not WHATSAPP_GRAPH_VERSION:
+            self.send_json(503, {"error": "La connexion WhatsApp Business Platform n’est pas configurée."})
+            return
+        with db_lock:
+            conn = connect()
+            try:
+                row = conn.execute(
+                    "SELECT message_type FROM whatsapp_messages WHERE media_id = ? LIMIT 1",
+                    (media_id,),
+                ).fetchone()
+            finally:
+                conn.close()
+        if not row:
+            self.send_error(404)
+            return
+        metadata_url = "https://graph.facebook.com/%s/%s" % (
+            quote(WHATSAPP_GRAPH_VERSION, safe=""),
+            quote(media_id, safe=""),
+        )
+        try:
+            request = urllib.request.Request(
+                metadata_url,
+                headers={"Authorization": "Bearer " + WHATSAPP_ACCESS_TOKEN},
+                method="GET",
+            )
+            with urllib.request.urlopen(request, timeout=20) as response:
+                metadata = json.loads(response.read(MAX_BODY + 1).decode("utf-8"))
+        except (urllib.error.URLError, TimeoutError, UnicodeDecodeError, json.JSONDecodeError):
+            self.send_json(502, {"error": "Le fichier WhatsApp n’a pas pu être récupéré."})
+            return
+        media_url = str(metadata.get("url") or "")
+        parsed = urlparse(media_url)
+        host = (parsed.hostname or "").lower()
+        allowed_hosts = ("fbcdn.net", "fbsbx.com", "facebook.com")
+        if parsed.scheme != "https" or not any(host == suffix or host.endswith("." + suffix) for suffix in allowed_hosts):
+            self.send_json(502, {"error": "Adresse de média WhatsApp invalide."})
+            return
+        try:
+            file_size = int(metadata.get("file_size") or 0)
+        except (TypeError, ValueError):
+            file_size = 0
+        if file_size > MAX_WHATSAPP_MEDIA_BYTES:
+            self.send_json(413, {"error": "Cette pièce jointe dépasse la limite d’ouverture du tableau de bord."})
+            return
+        try:
+            request = urllib.request.Request(
+                media_url,
+                headers={"Authorization": "Bearer " + WHATSAPP_ACCESS_TOKEN},
+                method="GET",
+            )
+            with urllib.request.urlopen(request, timeout=30) as response:
+                data = response.read(MAX_WHATSAPP_MEDIA_BYTES + 1)
+                response_type = response.headers.get("Content-Type") or ""
+        except (urllib.error.URLError, TimeoutError):
+            self.send_json(502, {"error": "Le téléchargement de la pièce jointe a échoué."})
+            return
+        if len(data) > MAX_WHATSAPP_MEDIA_BYTES:
+            self.send_json(413, {"error": "Cette pièce jointe dépasse la limite d’ouverture du tableau de bord."})
+            return
+        mime = str(metadata.get("mime_type") or response_type.split(";", 1)[0]).lower()
+        if not re.fullmatch(r"[a-z0-9!#    def do_GET(self):
+^_.+-]+/[a-z0-9!#    def do_GET(self):
+^_.+-]+", mime):
+            mime = "application/octet-stream"
+        inline = row["message_type"] in ("image", "video", "audio", "sticker")
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Content-Disposition", "inline" if inline else "attachment")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_GET(self):
         path = unquote(urlparse(self.path).path)
         if path == "/api/health":
@@ -731,6 +809,10 @@ class Handler(BaseHTTPRequestHandler):
                 finally:
                     conn.close()
             return
+        if path.startswith("/api/admin/whatsapp/media/"):
+            media_id = path.rsplit("/", 1)[-1]
+            self.send_whatsapp_media(media_id)
+            return
         if path.startswith("/api/admin/whatsapp/conversations/"):
             if not self.require_admin():
                 return
@@ -740,7 +822,7 @@ class Handler(BaseHTTPRequestHandler):
                 conn = connect()
                 try:
                     rows = conn.execute(
-                        "SELECT wa_message_id, wa_id, direction, message_type, body, status, created_at "
+                        "SELECT wa_message_id, wa_id, direction, message_type, body, media_id, status, created_at "
                         "FROM whatsapp_messages WHERE wa_id = ? ORDER BY id",
                         (wa_id,),
                     ).fetchall()
