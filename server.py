@@ -21,13 +21,13 @@ import urllib.request
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
 ROOT = Path(__file__).resolve().parent
-DATA = ROOT / "data"
+DATA = Path(os.environ.get("KABAMAN_DATA_DIR", str(ROOT / "data"))).resolve()
 IDS = DATA / "ids"
 DB_PATH = DATA / "kabaman.sqlite"
 CONFIG_PATH = DATA / "admin.config.json"
 SITE_PATH = ROOT / "site.json"
-HOST = "127.0.0.1"
-PORT = 4173
+HOST = os.environ.get("KABAMAN_HOST", "127.0.0.1")
+PORT = int(os.environ.get("PORT", "4173"))
 PBKDF2_ROUNDS = 200_000
 SESSION_DAYS = 14
 MAX_BODY = 3_000_000
