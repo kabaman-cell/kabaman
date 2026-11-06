@@ -1,6 +1,6 @@
 # Connexion WhatsApp de KABAMAN
 
-La page `whatsapp.html` ajoute une boîte de réception réservée à l’administrateur. Elle affiche les conversations reçues, les messages texte et les types de pièces jointes, et permet d’envoyer une réponse texte depuis le tableau de bord.
+La page `whatsapp.html` ajoute une boîte de réception réservée à l’administrateur. Elle affiche les conversations reçues, les messages texte et les pièces jointes, et permet d’envoyer une réponse texte depuis le tableau de bord. Les pièces jointes sont récupérées à la demande depuis Meta, uniquement par un administrateur connecté, sans être conservées en base de données. La limite d’ouverture est de 25 Mo par pièce jointe.
 
 ## Ce qu’il faut avant la mise en service
 
@@ -39,4 +39,4 @@ Meta demande un point de réception public en HTTPS et utilise une vérification
 
 ## Protection des données
 
-Le webhook conserve les textes, l’identifiant WhatsApp, l’heure et le type des messages dans la base privée. Les images et documents ne sont pas téléchargés dans la version actuelle. Le tableau de bord et ses API exigent la session administrateur. Ne stocke pas les identifiants Meta dans le dépôt GitHub.
+Le webhook conserve les textes, l’identifiant WhatsApp, l’heure, le type et l’identifiant Meta des pièces jointes dans la base privée. Les fichiers sont récupérés à la demande depuis Meta et ne sont pas conservés par le serveur. Le tableau de bord et ses API exigent la session administrateur. Ne stocke pas les identifiants Meta dans le dépôt GitHub.
