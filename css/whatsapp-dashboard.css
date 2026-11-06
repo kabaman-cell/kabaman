@@ -1,0 +1,379 @@
+.wa-page {
+  width: min(1180px, calc(100% - 36px));
+  margin: 52px auto 90px;
+  color: #f6efd9;
+  font-family: "Outfit", sans-serif;
+}
+
+.wa-heading,
+.wa-panel-heading,
+.wa-list-heading,
+.wa-form-actions,
+.wa-nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.wa-heading {
+  margin-bottom: 26px;
+}
+
+.wa-heading h1,
+.wa-panel h2,
+.wa-orders-section h2 {
+  margin: 4px 0 8px;
+}
+
+.wa-heading h1 {
+  font-family: "Cinzel", serif;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  line-height: 1.1;
+}
+
+.wa-lead,
+.wa-storage-note span,
+.wa-panel small,
+.wa-empty {
+  color: rgba(246, 239, 217, .7);
+}
+
+.wa-lead {
+  margin: 0;
+  max-width: 680px;
+  line-height: 1.65;
+}
+
+.wa-storage-note {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border: 1px solid rgba(212, 175, 55, .38);
+  border-left: 4px solid #d4af37;
+  border-radius: 4px;
+  background: rgba(212, 175, 55, .07);
+  line-height: 1.5;
+}
+
+.wa-storage-note strong {
+  color: #e7c75e;
+}
+
+.wa-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin: 0 0 24px;
+}
+
+.wa-metric,
+.wa-panel,
+.wa-order-card {
+  border: 1px solid rgba(212, 175, 55, .2);
+  border-radius: 8px;
+  background: rgba(15, 15, 15, .92);
+}
+
+.wa-metric {
+  display: flex;
+  min-height: 92px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.wa-metric span,
+.wa-order-meta,
+.wa-order-detail span {
+  color: rgba(246, 239, 217, .62);
+}
+
+.wa-metric strong {
+  color: #e7c75e;
+  font-size: 1.55rem;
+  font-weight: 600;
+}
+
+.wa-panel {
+  padding: 24px;
+}
+
+.wa-panel-heading {
+  margin-bottom: 20px;
+}
+
+.wa-panel-heading h2,
+.wa-orders-section h2 {
+  font-family: "Cinzel", serif;
+  font-size: 1.55rem;
+}
+
+.wa-source-badge {
+  padding: 7px 12px;
+  border: 1px solid rgba(37, 211, 102, .4);
+  border-radius: 999px;
+  color: #8de5ad;
+  font-size: .86rem;
+}
+
+.wa-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.wa-form label,
+.wa-search-label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #f6efd9;
+  font-size: .94rem;
+}
+
+.wa-form input,
+.wa-form textarea,
+.wa-list-controls input,
+.wa-list-controls select,
+.wa-order-card select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(246, 239, 217, .2);
+  border-radius: 4px;
+  outline: 0;
+  background: #090909;
+  color: #f6efd9;
+  font: inherit;
+}
+
+.wa-form input:focus,
+.wa-form textarea:focus,
+.wa-list-controls input:focus,
+.wa-list-controls select:focus,
+.wa-order-card select:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, .14);
+}
+
+.wa-form textarea {
+  resize: vertical;
+}
+
+.wa-form small {
+  font-size: .78rem;
+  line-height: 1.35;
+}
+
+.wa-form-wide {
+  grid-column: 1 / -1;
+}
+
+.wa-form-actions {
+  grid-column: 1 / -1;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.wa-status-message {
+  margin: 0;
+  color: #8de5ad;
+}
+
+.wa-orders-section {
+  margin-top: 42px;
+}
+
+.wa-list-heading {
+  align-items: flex-end;
+  margin-bottom: 18px;
+}
+
+.wa-list-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, .7fr);
+  gap: 8px;
+  width: min(510px, 100%);
+}
+
+.wa-search-label {
+  grid-column: 1 / -1;
+}
+
+.wa-list-controls input,
+.wa-list-controls select {
+  min-width: 0;
+}
+
+.wa-orders-list {
+  display: grid;
+  gap: 12px;
+}
+
+.wa-order-card {
+  padding: 18px;
+}
+
+.wa-order-top,
+.wa-order-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wa-order-top {
+  align-items: flex-start;
+}
+
+.wa-order-title {
+  margin: 0 0 3px;
+  font-size: 1.06rem;
+}
+
+.wa-order-meta {
+  margin: 0;
+  font-size: .84rem;
+}
+
+.wa-order-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 16px 0;
+}
+
+.wa-order-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.wa-order-detail strong {
+  font-weight: 500;
+}
+
+.wa-order-note {
+  margin: 12px 0 0;
+  padding: 11px 13px;
+  border-left: 2px solid rgba(212, 175, 55, .7);
+  background: rgba(255, 255, 255, .035);
+  color: rgba(246, 239, 217, .8);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wa-order-actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  padding-top: 14px;
+  border-top: 1px solid rgba(246, 239, 217, .1);
+}
+
+.wa-order-actions select {
+  width: auto;
+  min-width: 180px;
+}
+
+.wa-order-actions a {
+  color: #e7c75e;
+}
+
+.wa-delete {
+  margin-left: auto;
+  color: #ff9a8c !important;
+  border-color: rgba(255, 154, 140, .28) !important;
+}
+
+.wa-empty,
+.wa-error {
+  padding: 18px 0;
+  line-height: 1.5;
+}
+
+.wa-error {
+  color: #ff9a8c;
+}
+
+@media (max-width: 720px) {
+  .wa-page {
+    width: min(100% - 24px, 560px);
+    margin-top: 32px;
+  }
+
+  .wa-heading,
+  .wa-list-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .wa-heading > .btn {
+    width: 100%;
+  }
+
+  .wa-nav-actions {
+    gap: 7px;
+  }
+
+  .wa-nav-actions .btn {
+    padding-inline: 10px;
+    font-size: .8rem;
+  }
+
+  .wa-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wa-panel {
+    padding: 18px;
+  }
+
+  .wa-form {
+    grid-template-columns: 1fr;
+  }
+
+  .wa-form-wide {
+    grid-column: auto;
+  }
+
+  .wa-list-controls {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .wa-search-label {
+    grid-column: auto;
+  }
+
+  .wa-order-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wa-order-top {
+    flex-direction: column;
+  }
+
+  .wa-order-actions select {
+    width: 100%;
+  }
+
+  .wa-delete {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .wa-nav-actions .btn-quiet {
+    display: none;
+  }
+
+  .wa-order-details {
+    grid-template-columns: 1fr;
+  }
+}
