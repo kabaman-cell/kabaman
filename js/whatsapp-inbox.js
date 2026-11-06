@@ -81,6 +81,39 @@
       var body = item.body || "";
       if (item.message_type && item.message_type !== "text" && !body) body = "Contenu de type " + item.message_type + " reçu dans WhatsApp.";
       bubble.appendChild(textNode("p", "wa-message-body", body));
+      if (item.media_id) {
+        var mediaUrl = "/api/admin/whatsapp/media/" + encodeURIComponent(item.media_id);
+        if (item.message_type === "image" || item.message_type === "sticker") {
+          var image = document.createElement("img");
+          image.className = "wa-attachment";
+          image.src = mediaUrl;
+          image.alt = "Pièce jointe reçue dans WhatsApp";
+          image.loading = "lazy";
+          bubble.appendChild(image);
+        } else if (item.message_type === "video") {
+          var video = document.createElement("video");
+          video.className = "wa-attachment";
+          video.src = mediaUrl;
+          video.controls = true;
+          video.preload = "metadata";
+          bubble.appendChild(video);
+        } else if (item.message_type === "audio") {
+          var audio = document.createElement("audio");
+          audio.className = "wa-attachment-audio";
+          audio.src = mediaUrl;
+          audio.controls = true;
+          audio.preload = "metadata";
+          bubble.appendChild(audio);
+        } else {
+          var attachment = document.createElement("a");
+          attachment.className = "wa-attachment-link";
+          attachment.href = mediaUrl;
+          attachment.target = "_blank";
+          attachment.rel = "noopener noreferrer";
+          attachment.textContent = "Ouvrir la pièce jointe";
+          bubble.appendChild(attachment);
+        }
+      }
       var meta = document.createElement("div");
       meta.className = "wa-message-meta";
       meta.appendChild(textNode("time", "", formatTime(item.created_at)));
