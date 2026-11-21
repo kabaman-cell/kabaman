@@ -190,7 +190,7 @@ def upgrade() -> None:
     op.create_index("ix_documents_order_id", "documents", ["order_id"])
     op.create_table(
         "site_settings",
-        sa.Column("id", sa.SmallInteger(), primary_key=True),
+        sa.Column("id", sa.SmallInteger(), primary_key=True, autoincrement=False),
         sa.Column("data", postgresql.JSONB(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.Column(

@@ -15,6 +15,7 @@ from sqlalchemy import (
     Integer,
     SmallInteger,
     Text,
+    UniqueConstraint,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -31,10 +32,11 @@ class Customer(Base):
     __tablename__ = "customers"
     __table_args__ = (
         CheckConstraint("email = lower(email)", name="ck_customers_email_lowercase"),
+        UniqueConstraint("email", name="uq_customers_email"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    email: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    email: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     phone: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("''"))
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
@@ -54,10 +56,11 @@ class Employee(Base):
     __tablename__ = "employees"
     __table_args__ = (
         CheckConstraint("email = lower(email)", name="ck_employees_email_lowercase"),
+        UniqueConstraint("email", name="uq_employees_email"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    email: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    email: Mapped[str] = mapped_column(Text, nullable=False)
     name: Mapped[str] = mapped_column(Text, nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
@@ -87,10 +90,11 @@ class Session(Base):
             "expires_at",
             postgresql_where=text("revoked_at IS NULL"),
         ),
+        UniqueConstraint("token_hash", name="uq_sessions_token_hash"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    token_hash: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    token_hash: Mapped[str] = mapped_column(Text, nullable=False)
     principal_type: Mapped[str] = mapped_column(Text, nullable=False)
     customer_id: Mapped[int | None] = mapped_column(
         ForeignKey("customers.id", ondelete="CASCADE")
@@ -110,9 +114,10 @@ class Session(Base):
 
 class Role(Base):
     __tablename__ = "roles"
+    __table_args__ = (UniqueConstraint("name", name="uq_roles_name"),)
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
 
     permission_links: Mapped[list[RolePermission]] = relationship(back_populates="role")
     employee_links: Mapped[list[EmployeeRole]] = relationship(back_populates="role")
@@ -120,9 +125,10 @@ class Role(Base):
 
 class Permission(Base):
     __tablename__ = "permissions"
+    __table_args__ = (UniqueConstraint("code", name="uq_permissions_code"),)
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    code: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    code: Mapped[str] = mapped_column(Text, nullable=False)
 
     role_links: Mapped[list[RolePermission]] = relationship(back_populates="permission")
 
@@ -169,10 +175,11 @@ class Order(Base):
         Index("ix_orders_customer_created", "customer_id", "created_at"),
         Index("ix_orders_source_status", "source", "status"),
         Index("ix_orders_form", "form"),
+        UniqueConstraint("ref", name="uq_orders_ref"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    ref: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    ref: Mapped[str] = mapped_column(Text, nullable=False)
     customer_id: Mapped[int | None] = mapped_column(
         ForeignKey("customers.id", ondelete="RESTRICT")
     )
@@ -216,6 +223,7 @@ class Document(Base):
             name="ck_documents_bytes_removed",
         ),
         Index("ix_documents_order_id", "order_id"),
+        UniqueConstraint("storage_key", name="uq_documents_storage_key"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -226,7 +234,7 @@ class Document(Base):
     content_type: Mapped[str] = mapped_column(Text, nullable=False)
     byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
     sha256: Mapped[str] = mapped_column(Text, nullable=False)
-    storage_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    storage_key: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
@@ -244,7 +252,7 @@ class SiteSetting(Base):
     __tablename__ = "site_settings"
     __table_args__ = (CheckConstraint("id = 1", name="ck_site_settings_id"),)
 
-    id: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
+    id: Mapped[int] = mapped_column(SmallInteger, primary_key=True, autoincrement=False)
     data: Mapped[dict] = mapped_column(JSONB, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=text("now()")
