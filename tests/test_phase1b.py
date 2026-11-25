@@ -4,14 +4,17 @@ Tests issue SELECT statements only. They read pg_catalog and the seeded rows.
 This suite does not cover constraint enforcement through invalid insert attempts.
 """
 
-import os
 import re
 
 import psycopg
 import pytest
-from sqlalchemy.engine.url import make_url
 
-REQUIRED_DATABASE = "kabaman_phase1b_test"
+from phase1b_database import (
+    REQUIRED_DATABASE,
+    Phase1BTargetRefusal,
+    validated_target,
+)
+
 REQUIRED_PORT = 5432
 ALLOWED_HOSTS = {"127.0.0.1", "localhost", "::1"}
 LOOPBACK_ADDRESSES = {"127.0.0.1", "::1"}
@@ -244,23 +247,10 @@ EXPECTED_COLUMNS = {
 
 
 def _target_from_environment():
-    raw = os.environ.get("DATABASE_URL", "").strip()
-    if not raw:
-        pytest.fail("DATABASE_URL is not set. Refusing to connect.")
     try:
-        parsed = make_url(raw)
-    except Exception:
-        pytest.fail("DATABASE_URL could not be parsed. Refusing to connect.")
-    if (
-        parsed.database != REQUIRED_DATABASE
-        or parsed.host not in ALLOWED_HOSTS
-        or parsed.port != REQUIRED_PORT
-    ):
-        pytest.fail(
-            "Refusing to connect: database=%r host=%r port=%r."
-            % (parsed.database, parsed.host, parsed.port)
-        )
-    return parsed
+        return validated_target()
+    except Phase1BTargetRefusal as exc:
+        pytest.fail(str(exc))
 
 
 def _connect(parsed):
@@ -654,3 +644,70 @@ def test_no_auth_rate_limits_and_no_document_bytea(db):
     ]
     assert rate_tables == []
     assert bytea_columns == []
+
+
+def _refuse_before_connect(monkeypatch, raw):
+    calls = {"n": 0}
+
+    def reject(*args, **kwargs):
+        calls["n"] += 1
+        raise AssertionError("psycopg.connect was called")
+
+    monkeypatch.setattr(psycopg, "connect", reject)
+    if raw is None:
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+    else:
+        monkeypatch.setenv("DATABASE_URL", raw)
+    with pytest.raises(Phase1BTargetRefusal) as caught:
+        validated_target()
+    message = str(caught.value)
+    assert calls["n"] == 0
+    assert "secret" not in message
+    assert "postgresql://" not in message
+
+
+def test_guard_refuses_protected_and_other_databases_before_connect(monkeypatch):
+    for database in (
+        "kabaman_os",
+        "kabaman_phase1b_test",
+        "kabaman_phase1c_test",
+        "kabaman_other",
+    ):
+        _refuse_before_connect(
+            monkeypatch,
+            "postgresql://phase1b:secret@127.0.0.1:5432/%s" % database,
+        )
+
+
+def test_guard_refuses_non_loopback_host_before_connect(monkeypatch):
+    _refuse_before_connect(
+        monkeypatch,
+        "postgresql://phase1b:secret@192.0.2.10:5432/kabaman_phase1b_regression_test",
+    )
+
+
+def test_guard_refuses_wrong_port_before_connect(monkeypatch):
+    _refuse_before_connect(
+        monkeypatch,
+        "postgresql://phase1b:secret@127.0.0.1:5433/kabaman_phase1b_regression_test",
+    )
+    _refuse_before_connect(
+        monkeypatch,
+        "postgresql://phase1b:secret@127.0.0.1/kabaman_phase1b_regression_test",
+    )
+
+
+def test_guard_refuses_query_parameters_before_connect(monkeypatch):
+    for query in ("host=192.0.2.10", "hostaddr=192.0.2.21", "service=kabaman"):
+        _refuse_before_connect(
+            monkeypatch,
+            "postgresql://phase1b:secret@127.0.0.1:5432/"
+            "kabaman_phase1b_regression_test?%s" % query,
+        )
+
+
+def test_guard_refuses_missing_and_malformed_urls_before_connect(monkeypatch):
+    _refuse_before_connect(monkeypatch, None)
+    _refuse_before_connect(monkeypatch, "")
+    _refuse_before_connect(monkeypatch, "   ")
+    _refuse_before_connect(monkeypatch, "not-a-database-url")
