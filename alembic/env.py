@@ -1,14 +1,14 @@
-"""Alembic environment. The database URL comes from DATABASE_URL and is not printed."""
+"""Alembic environment. The database target is validated by api.security and is not printed."""
 
 from __future__ import annotations
 
-import os
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import create_engine, pool
+from sqlalchemy import create_engine, event, pool
 
 from api.models import Base
+from api.security import _verify_connection, validated_database_url
 
 config = context.config
 if config.config_file_name is not None:
@@ -17,26 +17,16 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
-def database_url() -> str:
-    url = os.environ.get("DATABASE_URL", "").strip()
-    if not url:
-        raise RuntimeError("DATABASE_URL is not set")
-    return url
-
-
 def run_migrations_offline() -> None:
-    context.configure(
-        url=database_url(),
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+    raise RuntimeError(
+        "Offline Alembic migrations are refused. SQL generation cannot bypass the database-target safety checks."
     )
-    with context.begin_transaction():
-        context.run_migrations()
 
 
 def run_migrations_online() -> None:
-    connectable = create_engine(database_url(), poolclass=pool.NullPool, echo=False)
+    url = validated_database_url()
+    connectable = create_engine(url, poolclass=pool.NullPool, echo=False)
+    event.listen(connectable, "connect", _verify_connection)
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():

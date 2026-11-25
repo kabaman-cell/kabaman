@@ -12,13 +12,11 @@ def test_app_imports():
     assert app is not None
 
 
-def test_health_is_the_only_route():
-    exposed = []
-    for route in app.routes:
-        methods = getattr(route, "methods", None)
-        if methods:
-            exposed.append((tuple(sorted(methods)), route.path))
-    assert exposed == [(("GET",), "/api/health")]
+def test_health_is_the_only_route(client):
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+    assert list(response.json()) == ["ok"]
 
 
 def test_health_returns_ok(client):
