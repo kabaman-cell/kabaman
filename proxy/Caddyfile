@@ -1,0 +1,26 @@
+{
+	auto_https off
+	admin off
+}
+
+# Local admin origin only. Port 4175 comes from this site address.
+# bind keeps the sockets on loopback; the public Host remains admin.localhost.
+# trusted_proxies is intentionally unset.
+http://admin.localhost:4175 {
+	bind 127.0.0.1 [::1]
+
+	handle /api/* {
+		reverse_proxy 127.0.0.1:4174 {
+			# Drop client-supplied forwarded headers. Caddy then sets
+			# X-Forwarded-For, X-Forwarded-Proto, and X-Forwarded-Host
+			# from the connection it accepted. Host and Origin stay as sent.
+			header_up -Forwarded
+		}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:4176 {
+			header_up -Forwarded
+		}
+	}
+}
