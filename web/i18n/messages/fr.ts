@@ -1,0 +1,60 @@
+import type { Messages } from "../config";
+
+const messages: Messages = {
+  documentTitle: "KABAMAN OS",
+  brand: "KABAMAN OS",
+  title: "Bienvenue",
+  welcome:
+    "Cette page pose la fondation de l'interface. Elle présente la langue, le sens d'écriture et les couleurs.",
+  localeLabel: "Langue",
+  directionLabel: "Sens",
+  directionValue: "De gauche à droite",
+  preview: "Aperçu de fondation. Le tableau de bord n'est pas encore disponible.",
+  dashboard: {
+    navigation: "Principal",
+    openSidebar: "Ouvrir le menu",
+    closeSidebar: "Fermer le menu",
+    collapseSidebar: "Réduire le menu",
+    expandSidebar: "Développer le menu",
+    localeSwitcher: "Langue",
+    account: "Compte",
+    accountUnavailable: "La connexion n'est pas encore disponible.",
+    logout: "Se déconnecter",
+    logoutPending: "Déconnexion…",
+    logoutFailed: "La déconnexion n'a pas abouti. Réessayez.",
+    overviewHeading: "Bienvenue",
+    overviewBody:
+      "KABAMAN OS est l'espace de travail des opérations. Les indicateurs apparaîtront ici lorsque les modules seront reliés.",
+    metricsHeading: "Indicateurs opérationnels",
+    metricsEmpty: "Aucun indicateur n'est disponible pour le moment.",
+    notImplemented: "Ce module n'est pas encore implémenté.",
+    nav: {
+      overview: "Vue d'ensemble",
+      orders: "Commandes",
+      customers: "Clients",
+      employees: "Employés",
+      sourcing: "Sourcing",
+      inspection: "Inspection",
+      shipments: "Expéditions",
+      cargo: "Fret et livraison",
+      documents: "Documents",
+      finance: "Finance",
+      whatsapp: "WhatsApp",
+      reports: "Rapports",
+      website: "Site web",
+      settings: "Paramètres",
+    },
+  },
+  login: {
+    heading: "Connexion",
+    intro: "Connectez-vous avec votre compte employé pour ouvrir l'espace de travail.",
+    emailLabel: "E-mail",
+    passwordLabel: "Mot de passe",
+    submit: "Se connecter",
+    submitting: "Connexion…",
+    required: "Saisissez l'e-mail et le mot de passe.",
+    failed: "La connexion a échoué. Vérifiez les informations et réessayez.",
+  },
+};
+
+export default messages;

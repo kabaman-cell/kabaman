@@ -1,0 +1,60 @@
+import type { Messages } from "../config";
+
+const messages: Messages = {
+  documentTitle: "KABAMAN OS",
+  brand: "KABAMAN OS",
+  title: "Welcome",
+  welcome:
+    "This page is the interface foundation. It shows the language, writing direction, and colors.",
+  localeLabel: "Language",
+  directionLabel: "Direction",
+  directionValue: "Left to right",
+  preview: "Foundation preview. The dashboard is not available yet.",
+  dashboard: {
+    navigation: "Main",
+    openSidebar: "Open sidebar",
+    closeSidebar: "Close sidebar",
+    collapseSidebar: "Collapse sidebar",
+    expandSidebar: "Expand sidebar",
+    localeSwitcher: "Language",
+    account: "Account",
+    accountUnavailable: "Sign-in is not available yet.",
+    logout: "Sign out",
+    logoutPending: "Signing out…",
+    logoutFailed: "Sign-out did not complete. Try again.",
+    overviewHeading: "Welcome",
+    overviewBody:
+      "KABAMAN OS is the operations workspace. Metrics will appear here when the modules are connected.",
+    metricsHeading: "Operational metrics",
+    metricsEmpty: "No metrics are available yet.",
+    notImplemented: "This module is not implemented yet.",
+    nav: {
+      overview: "Overview",
+      orders: "Orders",
+      customers: "Customers",
+      employees: "Employees",
+      sourcing: "Sourcing",
+      inspection: "Inspection",
+      shipments: "Shipments",
+      cargo: "Cargo & Delivery",
+      documents: "Documents",
+      finance: "Finance",
+      whatsapp: "WhatsApp",
+      reports: "Reports",
+      website: "Website",
+      settings: "Settings",
+    },
+  },
+  login: {
+    heading: "Sign in",
+    intro: "Sign in with your employee account to open the operations workspace.",
+    emailLabel: "Email",
+    passwordLabel: "Password",
+    submit: "Sign in",
+    submitting: "Signing in…",
+    required: "Enter your email and password.",
+    failed: "Sign-in failed. Check the details and try again.",
+  },
+};
+
+export default messages;

@@ -1,0 +1,353 @@
+.dashboard {
+  --sidebar-expanded: 240px;
+  --sidebar-collapsed: 72px;
+  min-height: 100vh;
+  display: flex;
+  background: var(--background);
+  color: var(--text);
+}
+
+.sidebar {
+  width: var(--sidebar-expanded);
+  flex: 0 0 var(--sidebar-expanded);
+  display: flex;
+  flex-direction: column;
+  background: var(--charcoal);
+  border-inline-end: 1px solid var(--brown);
+  transition: width 160ms ease, flex-basis 160ms ease;
+}
+
+.dashboard.is-collapsed .sidebar {
+  width: var(--sidebar-collapsed);
+  flex-basis: var(--sidebar-collapsed);
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  min-height: 4rem;
+  padding: 0.9rem 1rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+}
+
+.sidebar-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  flex: 0 0 1.7rem;
+  border: 1px solid var(--accent);
+  font-size: 0.85rem;
+  letter-spacing: 0;
+}
+
+.sidebar-nav {
+  padding: 0.4rem;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.7rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-inline-start: 2px solid transparent;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.nav-link:hover {
+  color: var(--text);
+  background: rgb(246 239 217 / 4%);
+}
+
+.nav-link.is-active {
+  color: var(--text);
+  font-weight: 600;
+  background: rgb(212 175 55 / 10%);
+  border-inline-start-color: var(--accent);
+}
+
+.nav-mark {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 0.9rem;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+}
+
+.nav-mark-orders,
+.nav-mark-documents,
+.nav-mark-reports {
+  border-radius: 0;
+}
+
+.nav-mark-customers,
+.nav-mark-employees,
+.nav-mark-settings {
+  border-radius: 50%;
+}
+
+.dashboard.is-collapsed .sidebar-brand-text,
+.dashboard.is-collapsed .nav-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dashboard.is-collapsed .nav-link,
+.dashboard.is-collapsed .sidebar-brand {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.dashboard-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 4rem;
+  padding: 0.75rem 1rem;
+  background: var(--charcoal);
+  border-block-end: 1px solid var(--brown);
+}
+
+.topbar-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.05rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-toggle,
+.account button,
+.locale-switcher a {
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--brown);
+  text-decoration: none;
+}
+
+.sidebar-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+}
+
+.menu-glyph,
+.menu-glyph::before,
+.menu-glyph::after {
+  display: block;
+  width: 0.9rem;
+  height: 1px;
+  background: var(--accent);
+  content: "";
+}
+
+.menu-glyph {
+  position: relative;
+}
+
+.menu-glyph::before,
+.menu-glyph::after {
+  position: absolute;
+  inset-inline-start: 0;
+}
+
+.menu-glyph::before {
+  inset-block-start: -0.28rem;
+}
+
+.menu-glyph::after {
+  inset-block-start: 0.28rem;
+}
+
+.locale-switcher {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.locale-switcher a {
+  min-width: 2.4rem;
+  padding: 0.35rem 0.45rem;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+}
+
+.locale-switcher a[aria-current="true"] {
+  color: var(--background);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.account {
+  position: relative;
+}
+
+.account button {
+  min-height: 2.4rem;
+  padding: 0.35rem 0.7rem;
+}
+
+.account [role="dialog"] {
+  position: absolute;
+  z-index: 5;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + 0.4rem);
+  width: min(16rem, 70vw);
+  margin: 0;
+  padding: 0.85rem 1rem;
+  background: var(--button-background);
+  border: 1px solid var(--brown);
+}
+
+.account p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.dashboard-content {
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+}
+
+.dashboard-page h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.dashboard-lead,
+.dashboard-empty {
+  max-width: 40rem;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+}
+
+.dashboard-panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: var(--charcoal);
+  border: 1px solid var(--brown);
+  border-inline-start: 2px solid var(--bronze);
+}
+
+.dashboard-panel h2 {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.dashboard-backdrop {
+  display: none;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 959px) {
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: inline-grid;
+  }
+
+  .sidebar {
+    position: fixed;
+    z-index: 30;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: var(--sidebar-expanded);
+    transform: translateX(-100%);
+    visibility: hidden;
+  }
+
+  html[dir="rtl"] .sidebar {
+    transform: translateX(100%);
+  }
+
+  .sidebar.is-mobile-open,
+  html[dir="rtl"] .sidebar.is-mobile-open {
+    transform: none;
+    visibility: visible;
+  }
+
+  .dashboard.is-collapsed .sidebar {
+    width: var(--sidebar-expanded);
+    flex-basis: var(--sidebar-expanded);
+  }
+
+  .dashboard.is-collapsed .sidebar-brand-text,
+  .dashboard.is-collapsed .nav-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .dashboard.is-collapsed .nav-link,
+  .dashboard.is-collapsed .sidebar-brand {
+    justify-content: flex-start;
+    padding-inline: 0.7rem;
+  }
+
+  .dashboard.is-collapsed .sidebar-brand {
+    padding-inline: 1rem;
+  }
+
+  .dashboard-backdrop {
+    display: block;
+    position: fixed;
+    z-index: 20;
+    inset: 0;
+    border: 0;
+    background: rgb(7 7 7 / 72%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .nav-link {
+    transition: none;
+  }
+}
+
+.dashboard a:focus-visible,
+.dashboard button:focus-visible,
+.dashboard summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
